@@ -149,6 +149,7 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
             trackers[index].last_cl_addr = cl_addr;
             break;
         case STATE_NON_UNI:
+            trackers[index].last_cl_addr = cl_addr;
             if(stride == trackers[index].strides.front()){
                 if(trackers[index].uni_conf_counter++ > UNI_CONF_THRESH)
                     trackers[index].state = STATE_INIT;
@@ -157,7 +158,22 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
                 trackers[index].uni_conf_counter = 0;
                 trackers[index].state = STATE_INIT;
                 if(trackers[index].strides.front() == stride){
-                   ; // prefetch the thing(s) after front
+                    uint64_t address = cl_addr;
+                    for (int i=0; i<PREFETCH_DEGREE; i++) {
+                        address += trackers[index].strides[i];
+                        uint64_t pf_address = address << LOG2_BLOCK_SIZE;
+
+                        // only issue a prefetch if the prefetch address is in the same 4 KB page
+                        // as the current demand access address
+                        if ((pf_address >> LOG2_PAGE_SIZE) != (addr >> LOG2_PAGE_SIZE))
+                            break;
+
+                        // check the MSHR occupancy to decide if we're going to prefetch to the L1 or L2
+                        if (MSHR.occupancy < (MSHR.SIZE>>1))
+                            prefetch_line(ip, addr, pf_address, FILL_L1, 0);
+                        else
+                            prefetch_line(ip, addr, pf_address, FILL_L2, 0);
+                    } // prefetch the thing(s) after front
                 }
                 else{
                     trackers[index].strides.push(stride);
