@@ -191,5 +191,6 @@ void CACHE::l1d_prefetcher_cache_fill(uint64_t v_addr, uint64_t addr, uint32_t s
 
 void CACHE::l1d_prefetcher_final_stats()
 {
-
+    cout << "CPU " << cpu << " L1D PC-based stride prefetcher final stats" << endl;
+	cout << "Degree: " << PREFETCH_DEGREE << endl;
 }

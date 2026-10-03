@@ -5,7 +5,7 @@
 #define MASK_IP 0xFF
 #define IP_TRACKER_COUNT 24
 #define PATTERN_WIDTH 3
-#define UNI_THRESH 1
+#define UNI_THRESH 2
 #define NON_UNI_THRESH 2
 #define COUNTER_SAT 7
 /*

@@ -5,31 +5,49 @@
 #define MASK_IP 0xFF
 #define IP_TRACKER_COUNT 24
 #define PATTERN_WIDTH 2
-#define CONF_THRESH 2
+#define UNI_CONF_THRESH 1
+#define NON_UNI_CONF_THRESH 2
+
+template <typename T, std::size_t MaxLen, typename Container = std::deque<T>>
+class FixedQueue : public Container {
+public:
+    void push(const T& value) {
+        if (this->size() == MaxLen) {
+            this->pop_front();
+        }
+        Container::push_back(value);
+    }
+};
+
+inline void reset(FixedQueue<int64_t, PATTERN_WIDTH> &q) {
+    while (!q.empty())
+        q.pop_back();
+}
 
 typedef enum {
-    STATE_UNI_INIT,
-    STATE_UNI_TRACK,
-    STATE_UNI_CONF,
+    STATE_INIT,
+    STATE_UNI,
     STATE_NON_UNI
 } PF_STATE;
 
 class IP_TRACKER{
     public:
         uint64_t ip; 
-        int64_t strides[PATTERN_WIDTH] ; //observed stride pattern
-        uint64_t stride_offset;
+        FixedQueue<int64_t, PATTERN_WIDTH> strides; //observed stride pattern
+        //uint64_t stride_offset;
         uint64_t last_cl_addr; //last address accessed
         uint32_t lru;
         uint32_t conf_counter;
+        uint32_t uni_conf_counter;
         PF_STATE state;
         IP_TRACKER () {
-            stride_offset = 0;
+            //stride_offset = 0;
             conf_counter = 0;
-            state = STATE_UNI_INIT;
+            uni_conf_counter = 0;
+            state = STATE_INIT;
             ip = 0;
             last_cl_addr = 0;
-            std::memset(strides, 0, sizeof(strides)); //n.b. is this okay?
+            reset(strides); 
             lru = 0;
     };
 };
@@ -65,10 +83,7 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
         //maybe write a function for this?
         trackers[index].ip = ip;
         trackers[index].last_cl_addr = cl_addr;
-        trackers[index].state = STATE_UNI_INIT;
-        trackers[index].stride_offset = 0;
-        trackers[index].conf_counter = 0;
-        std::memset(trackers[index].strides, 0, PATTERN_WIDTH*sizeof(int64_t));
+        trackers[index].state = STATE_INIT;
 
         //cout << "[IP_STRIDE] MISS index: " << index << " lru: " << trackers[index].lru << " ip: " << hex << ip << " cl_addr: " << cl_addr << dec << endl;
 	    for (int i=0; i<IP_TRACKER_COUNT; i++) {
@@ -98,33 +113,19 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
     if (stride == 0)
         return; //metadata_in
     switch(trackers[index].state){
-        case STATE_UNI_INIT:
+        case STATE_INIT: 
+            //resets table entry
             trackers[index].conf_counter = 0;
-            if(trackers[index].strides[trackers[index].stride_offset] == stride){
-                for (int i=0; i<PREFETCH_DEGREE; i++) {
-                    uint64_t pf_address = (cl_addr + (stride*(i+1))) << LOG2_BLOCK_SIZE;
-
-                    // only issue a prefetch if the prefetch address is in the same 4 KB page
-                    // as the current demand access address
-                    if ((pf_address >> LOG2_PAGE_SIZE) != (addr >> LOG2_PAGE_SIZE))
-                        break;
-
-                    // check the MSHR occupancy to decide if we're going to prefetch to the L1 or L2
-                    if (MSHR.occupancy < (MSHR.SIZE>>1))
-                        prefetch_line(ip, addr, pf_address, FILL_L1, 0);
-                    else
-                        prefetch_line(ip, addr, pf_address, FILL_L2, 0);
-                }
-            }
-            trackers[index].stride_offset = 0;
-            std::memset(trackers[index].strides, 0, PATTERN_WIDTH*sizeof(int64_t));
-            trackers[index].strides[trackers[index].stride_offset] = stride;
+            trackers[index].uni_conf_counter = 0;
+            reset(trackers[index].strides);
+            //new stride observed, move to uniform access state
+            trackers[index].state = STATE_UNI;
+            trackers[index].strides.push(stride);
             trackers[index].last_cl_addr = cl_addr;
-            trackers[index].state = STATE_UNI_TRACK;
             break;
-        case STATE_UNI_TRACK:
-            if (stride == trackers[index].strides[trackers[index].stride_offset]) {
-                trackers[index].state = STATE_UNI_INIT;
+        case STATE_UNI:
+            if (stride == trackers[index].strides.back()) {
+                trackers[index].conf_counter = 0;
                 for (int i=0; i<PREFETCH_DEGREE; i++) {
                     uint64_t pf_address = (cl_addr + (stride*(i+1))) << LOG2_BLOCK_SIZE;
 
@@ -141,29 +142,43 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
                 }
             }
             else{
-                trackers[index].strides[trackers[index].stride_offset++] = stride;
-                trackers[index].last_cl_addr = cl_addr;
-                if (trackers[index].stride_offset == PATTERN_WIDTH) {
-                    trackers[index].stride_offset = 0;
-                    trackers[index].state = STATE_UNI_CONF;
-                }
-            }
-            break;
-        case STATE_UNI_CONF:
-            if(stride == trackers[index].strides[trackers[index].stride_offset++])
-                return; //metadata_in
-            else
-                trackers[index].state = STATE_UNI_INIT;
-            if(trackers[index].stride_offset == PATTERN_WIDTH) {
-                trackers[index].stride_offset = 0;
-                trackers[index].conf_counter++;
-                if (trackers[index].conf_counter >= CONF_THRESH) {
+                trackers[index].strides.push(stride);
+                if(trackers[index].conf_counter++ > NON_UNI_CONF_THRESH)
                     trackers[index].state = STATE_NON_UNI;
-                }
             }
+            trackers[index].last_cl_addr = cl_addr;
             break;
         case STATE_NON_UNI:
+            trackers[index].last_cl_addr = cl_addr;
+            if(stride == trackers[index].strides.front()){
+                if(trackers[index].uni_conf_counter++ > UNI_CONF_THRESH)
+                    trackers[index].state = STATE_INIT;
+            }
+            else{
+                trackers[index].uni_conf_counter = 0;
+                trackers[index].state = STATE_INIT;
+                if(trackers[index].strides.front() == stride){
+                    uint64_t address = cl_addr;
+                    for (int i=0; i<PREFETCH_DEGREE; i++) {
+                        address += trackers[index].strides[i];
+                        uint64_t pf_address = address << LOG2_BLOCK_SIZE;
 
+                        // only issue a prefetch if the prefetch address is in the same 4 KB page
+                        // as the current demand access address
+                        if ((pf_address >> LOG2_PAGE_SIZE) != (addr >> LOG2_PAGE_SIZE))
+                            break;
+
+                        // check the MSHR occupancy to decide if we're going to prefetch to the L1 or L2
+                        if (MSHR.occupancy < (MSHR.SIZE>>1))
+                            prefetch_line(ip, addr, pf_address, FILL_L1, 0);
+                        else
+                            prefetch_line(ip, addr, pf_address, FILL_L2, 0);
+                    } // prefetch the thing(s) after front
+                }
+                else{
+                    trackers[index].strides.push(stride);
+                }
+            }
             break;
     }
 
@@ -176,5 +191,6 @@ void CACHE::l1d_prefetcher_cache_fill(uint64_t v_addr, uint64_t addr, uint32_t s
 
 void CACHE::l1d_prefetcher_final_stats()
 {
-
+    cout << "CPU " << cpu << " L1D PC-based stride prefetcher final stats" << endl;
+	cout << "Degree: " << PREFETCH_DEGREE << endl;
 }
