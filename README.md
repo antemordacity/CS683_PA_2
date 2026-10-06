@@ -28,6 +28,30 @@ Your binary will have different name for different configs. Custom name help dis
 --Complied Binary: hashed_perceptron-no-no-no-no-no-no-no-lru-lru-lru-lru-lru-lru-lru-lru-1core-baseline
 ```
 
+## Use GCC 7 with Docker
+
+On macOS, start the GCC 7 container from the project directory with:
+
+```bash
+./docker-gcc7.sh
+```
+
+The script mounts this project at `/workspace` and the sibling `../traces`
+directory at `/traces` (read-only), then opens a shell in the container. Build
+and run ChampSim from that shell, for example:
+
+```bash
+./build_champsim.sh baseline
+./bin/[BINARY] -warmup_instructions 25000000 \
+  -simulation_instructions 25000000 \
+  -traces /traces/Trace1-001.gz
+```
+
+The project mount is read-write, so source edits and generated files (including
+the build output) are immediately visible on the Mac and persist after the
+container exits. The container itself is temporary; its unmounted filesystem
+is removed when you exit. The traces mount is read-only.
+
 ## Run simulation
 
 ```bash
@@ -76,4 +100,3 @@ If GCC and G++ are already present in `/usr/bin`, configure the alternatives usi
 sudo update-alternatives --config g++
 sudo update-alternatives --config gcc
 ```
-
