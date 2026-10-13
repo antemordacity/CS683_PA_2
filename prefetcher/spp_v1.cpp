@@ -54,7 +54,7 @@ class IP_TRACKER {
 IP_TRACKER trackers[IP_TRACKER_COUNT];
 
 void push_history(IP_TRACKER *tracker, int64_t stride) {
-    for (int i = 1; i<HISTORY_LENGTH; i++)
+    for (int i = HISTORY_LENGTH-1; i>0; i--)
         tracker->stride_history[i-1] = tracker->stride_history[i];
     tracker->stride_history[HISTORY_LENGTH-1] = stride;
 }
