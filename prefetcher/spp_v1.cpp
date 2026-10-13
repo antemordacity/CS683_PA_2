@@ -2,6 +2,8 @@
 
 
 #define IP_TRACKER_COUNT 24
+#define SPT_COUNT 24
+#define COUNTER_WIDTH 3
 #define PREFETCH_DEGREE 3
 #define HISTORY_LENGTH 3
 #define UNI_THRESH 2
@@ -11,17 +13,56 @@
 
 typedef enum { NON_UNIFORM, UNIFORM } state_t;
 
+class Switcher {
+    //int8_t confidence;
+    public:
+        void switch_state(IP_TRACKER * ip_table_entry){
+            if(ip_table_entry->uni_conf < UNI_THRESH)
+                ip_table_entry->state = NON_UNIFORM;
+            else
+                ip_table_entry->state = UNIFORM;
+        };
+        Switcher(){
+            //confidence = 0;
+        };
+};
+
+Switcher switcher;
+
 class SPT { //Stride Prediction Table
-    public: //I've no clue how to implement this properly
+    public: 
         typedef struct {
             int64_t index;
             int64_t next_stride;
             int8_t conf;
+            int8_t lru;
         } SPT_entry;
 
-        SPT_entry signature(IP_TRACKER *); //signature for hashing into SPT
+
+        int64_t signature(IP_TRACKER *); //signature for hashing into SPT; internal function
+
+        void createNewEntry(int64_t index){
+
+        };
+
         int64_t next_stride(IP_TRACKER *);
-        int8_t* next_conf(IP_TRACKER *);
+
+        void update_next_conf(IP_TRACKER * ip_table_entry, int stride){ //updates next stride if conf == 0 
+            int64_t index = signature(ip_table_entry);
+            SPT_entry *spt_entry; //use index 
+            if(spt_entry->next_stride == stride)
+                if(spt_entry->conf < COUNTER_WIDTH)
+                    spt_entry->conf++;
+            else{
+                if(spt_entry->conf > 0)
+                    spt_entry->conf--;
+                else
+                    update_stride(&trackers[index], stride);
+            }
+        };
+
+        int8_t next_conf(IP_TRACKER *);
+
         void update_stride(IP_TRACKER *, int64_t);
         SPT (){
 
@@ -35,7 +76,7 @@ class IP_TRACKER {
     uint64_t ip;
     uint64_t last_cl_addr;
     int64_t last_stride;
-    int64_t stride_history[HISTORY_LENGTH]; //last 3 strides 
+    int64_t stride_history[HISTORY_LENGTH]; //last 3 strides -- maybe use a signature instead?
     uint32_t lru;
     uint8_t uni_conf; //confidence counter for uniform stride
     state_t state;
@@ -54,7 +95,7 @@ class IP_TRACKER {
 IP_TRACKER trackers[IP_TRACKER_COUNT];
 
 void push_history(IP_TRACKER *tracker, int64_t stride) {
-    for (int i = HISTORY_LENGTH-1; i>0; i--)
+    for (int i = 1; i<HISTORY_LENGTH; i++)
         tracker->stride_history[i-1] = tracker->stride_history[i];
     tracker->stride_history[HISTORY_LENGTH-1] = stride;
 }
@@ -108,7 +149,8 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
         assert(0);
     
     update_LRU(&trackers[index]);
-    
+
+    //stride calculation
     int64_t stride = 0;
     if (cl_addr > trackers[index].last_cl_addr)
         stride = cl_addr - trackers[index].last_cl_addr;
@@ -140,14 +182,11 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
             }
             push_history(&trackers[index], stride);
             //state transition logic
-            if (trackers[index].uni_conf < UNI_THRESH) {
-                trackers[index].state = NON_UNIFORM;
-            }
+            switcher.switch_state(&trackers[index]);
             break;
         case NON_UNIFORM:
             //updating confidence counters
-            int8_t *non_uni_conf = spt.next_conf(&trackers[index]);
-            if(stride == trackers[index].last_stride){
+            if(stride == trackers[index].last_stride){ //try different version
                 trackers[index].uni_conf++;
             }
             else{
@@ -156,25 +195,13 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
                 else
                     trackers[index].last_stride = stride; //updating last stride if conf = 0
             }
-            if(spt.next_stride(&trackers[index]) == stride){
-                if(*non_uni_conf < 3)
-                    (*non_uni_conf)++;
-            }
-            else{
-                if(*non_uni_conf > 0)
-                    (*non_uni_conf)--;
-                else
-                    spt.update_stride(&trackers[index], stride);
-            }
-            //prefetching
+            spt.update_next_conf(&trackers[index], stride);
             push_history(&trackers[index], stride);
-            if(*spt.next_conf(&trackers[index]) >= NON_UNI_THRESH){
+            if(spt.next_conf(&trackers[index]) >= NON_UNI_THRESH){
                 //prefetch logic
             }
             //state transition logic
-            if (trackers[index].uni_conf >= UNI_THRESH) {
-                trackers[index].state = UNIFORM;
-            }
+            switcher.switch_state(&trackers[index]);
             break;
     }
     
