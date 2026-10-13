@@ -84,11 +84,11 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
     }
 
     if (index == IP_TRACKER_COUNT) { //if new IP replace LRU tracker
-        for (index=0; index<IP_TRACKER_COUNT; index++) {
-            if (trackers[index].lru == (IP_TRACKER_COUNT-1))
-                break;
+        for (int i =0; i<IP_TRACKER_COUNT; i++) {
+            if (trackers[i].lru == (IP_TRACKER_COUNT-1))
+                index = i;
             else
-                trackers[index].lru++; //update LRU of all other trackers
+                trackers[i].lru++; //update LRU of all other trackers
         }
 
         trackers[index].ip = ip;
