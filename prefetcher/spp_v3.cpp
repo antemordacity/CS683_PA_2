@@ -237,9 +237,11 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
         int i = 0;
         for( ; i < PREFETCH_DEGREE ; i ++ ){
             int index = spptable.hash(history);
+            if(index == SPP_TABLE_SIZE)
+                break;
             int predStride = spptable.predStrides[index];
             int conf = spptable.confidenceCounter[index];
-            if(conf > NON_UNI_PREFETCH_THRESH){ //uh, >=?
+            if(conf >= NON_UNI_PREFETCH_THRESH){ //uh, >=?
                 updateHistory(predStride,history);
                 ipTrackers[index].predictedStrides[i] = predStride;
             }
