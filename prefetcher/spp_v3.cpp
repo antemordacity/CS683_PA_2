@@ -8,7 +8,7 @@
 #define DUMMY_PREFETCH 1000 //garbage value
 #define HISTORY_LENGTH 4
 #define SPP_TABLE_SIZE 32
-#define NON_UNI_PREFETCH_THRESH 2
+#define NON_UNI_PREFETCH_THRESH 1
 
 void updateCounter(int &counter, bool increment) {
     if (increment) {
@@ -33,7 +33,7 @@ class switcher {
     }
 
     void updateSwitcher(int stride){
-        if(predictedStride != DUMMY_PREFETCH && predictedStride != 0){
+        if(predictedStride != DUMMY_PREFETCH){
             updateCounter(counter , stride == predictedStride); 
         }
 
@@ -42,6 +42,7 @@ class switcher {
     }
 
     void updatePrediction(int pred){
+       if(predictedStride != 0 && counter == 0)
         predictedStride = pred;
     }
 };
@@ -162,14 +163,22 @@ void updateHistory(int stride , int* strideHistory){
 
 int calculateStride(uint64_t newCacheLine, uint64_t oldCacheLine) {
     constexpr int MOD = 1 << (LOG2_PAGE_SIZE - LOG2_BLOCK_SIZE); //number of cache lines/page
+    constexpr int MOD = 1 << (LOG2_PAGE_SIZE - LOG2_BLOCK_SIZE); //number of cache lines/page
     int offsetNew = newCacheLine % MOD;
     int offsetOld = oldCacheLine % MOD;
 
-    // int stride = (offsetNew - offsetOld + MOD) % MOD;
+    int stride = (offsetNew - offsetOld + MOD) % MOD;
 
-    // if (stride > MOD / 2)
-    //     stride -= MOD;
-    int stride = (offsetNew - offsetOld + MOD)%MOD;
+    if (stride > MOD / 2)
+        stride -= MOD;
+    //int stride = (offsetNew - offsetOld + MOD)%MOD;
+    // int64_t stride = 0;
+    // if (newCacheLine > oldCacheLine)
+    //     stride = newCacheLine - oldCacheLine;
+    // else {
+    //     stride = oldCacheLine - newCacheLine;
+    //     stride *= -1;
+    // }
     return stride;
 }
 
@@ -243,7 +252,7 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
                 break;
             int predStride = spptable.predStrides[table_index];
             int conf = spptable.confidenceCounter[table_index];
-            if(conf >= NON_UNI_PREFETCH_THRESH){ //uh, >=?
+            if(conf >= NON_UNI_PREFETCH_THRESH){ 
                 updateHistory(predStride,history);
                 ipTrackers[index].predictedStrides[i] = predStride;
             }
@@ -263,8 +272,10 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
             }
         }
     }
-    ipTrackers[index].mode.updatePrediction(ipTrackers[index].predictedStrides[0]);
+    //ipTrackers[index].mode.updatePrediction(ipTrackers[index].predictedStrides[0]);
+    ipTrackers[index].mode.updatePrediction(stride);
     stride = 0;
+    //prefetching
     for (int i=0; i<PREFETCH_DEGREE; i++) {
         if(ipTrackers[index].predictedStrides[i] == 0)
             continue;
