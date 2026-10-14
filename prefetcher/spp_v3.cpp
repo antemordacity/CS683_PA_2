@@ -162,23 +162,24 @@ void updateHistory(int stride , int* strideHistory){
 }
 
 int calculateStride(uint64_t newCacheLine, uint64_t oldCacheLine) {
-    constexpr int MOD = 1 << (LOG2_PAGE_SIZE - LOG2_BLOCK_SIZE); //number of cache lines/page
-    constexpr int MOD = 1 << (LOG2_PAGE_SIZE - LOG2_BLOCK_SIZE); //number of cache lines/page
-    int offsetNew = newCacheLine % MOD;
-    int offsetOld = oldCacheLine % MOD;
+    // constexpr int MOD = 1 << (LOG2_PAGE_SIZE - LOG2_BLOCK_SIZE); //number of cache lines/page
+    // int offsetNew = newCacheLine % MOD;
+    // int offsetOld = oldCacheLine % MOD;
 
-    int stride = (offsetNew - offsetOld + MOD) % MOD;
+    // int stride = (offsetNew - offsetOld + MOD) % MOD;
 
-    if (stride > MOD / 2)
-        stride -= MOD;
+    // if (stride > MOD / 2)
+    //     stride -= MOD;
     //int stride = (offsetNew - offsetOld + MOD)%MOD;
-    // int64_t stride = 0;
-    // if (newCacheLine > oldCacheLine)
-    //     stride = newCacheLine - oldCacheLine;
-    // else {
-    //     stride = oldCacheLine - newCacheLine;
-    //     stride *= -1;
-    // }
+    int64_t stride = 0;
+    if (newCacheLine > oldCacheLine)
+        stride = newCacheLine - oldCacheLine;
+    else {
+        stride = oldCacheLine - newCacheLine;
+        stride *= -1;
+    }
+    if(stride > 63 || stride < -63)
+        return 0;
     return stride;
 }
 
