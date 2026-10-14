@@ -29,6 +29,22 @@ class Switcher {
 
 Switcher switcher;
 
+class accuracyTracker{
+    int accuracy;
+    int degree;
+    public:
+        int degree(){
+            return degree;
+        };
+    accuracyTracker(){
+        accuracy = 0;
+        degree = PREFETCH_DEGREE;
+    };
+    
+};
+
+accuracyTracker accuracy_tracker;
+
 class SPT { //Stride Prediction Table
     public: 
         typedef struct {
@@ -39,7 +55,7 @@ class SPT { //Stride Prediction Table
         } SPT_entry;
 
 
-        int64_t signature(IP_TRACKER *); //signature for hashing into SPT; internal function
+        int64_t hash_func(IP_TRACKER *); // hash_func for hashing into SPT; internal function
 
         void createNewEntry(int64_t index){
 
@@ -48,7 +64,7 @@ class SPT { //Stride Prediction Table
         int64_t next_stride(IP_TRACKER *);
 
         void update_next_conf(IP_TRACKER * ip_table_entry, int stride){ //updates next stride if conf == 0 
-            int64_t index = signature(ip_table_entry);
+            int64_t index = hash_func(ip_table_entry);
             SPT_entry *spt_entry; //use index 
             if(spt_entry->next_stride == stride)
                 if(spt_entry->conf < COUNTER_WIDTH)
@@ -80,6 +96,7 @@ class IP_TRACKER {
     uint32_t lru;
     uint8_t uni_conf; //confidence counter for uniform stride
     state_t state;
+
     IP_TRACKER () {
         ip = 0;
         last_cl_addr = 0;
@@ -107,6 +124,7 @@ void update_LRU(IP_TRACKER *tracker) {
     }
     tracker->lru = 0;
 }
+
 
 void CACHE::l1d_prefetcher_initialize() {
     cout << "CPU " << cpu << " L1D SPP" << endl;
@@ -175,6 +193,20 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
                 if (trackers[index].uni_conf < 3) //update confidence counter
                     trackers[index].uni_conf++;
                 //uniform prefetch here
+                for (int i=0; i<accuracy_tracker.degree(); i++) {
+                    uint64_t pf_address = (cl_addr + (stride*(i+1))) << LOG2_BLOCK_SIZE;
+
+                    // only issue a prefetch if the prefetch address is in the same 4 KB page
+                    // as the current demand access address
+                    if ((pf_address >> LOG2_PAGE_SIZE) != (addr >> LOG2_PAGE_SIZE))
+                        break;
+
+                    // check the MSHR occupancy to decide if we're going to prefetch to the L1 or L2
+                    if (MSHR.occupancy < (MSHR.SIZE>>1))
+                        prefetch_line(ip, addr, pf_address, FILL_L1, 0);
+                    else
+                        prefetch_line(ip, addr, pf_address, FILL_L2, 0);
+                }
             }
             else {
                 trackers[index].uni_conf--; //update confidence counter
@@ -197,8 +229,10 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
             }
             spt.update_next_conf(&trackers[index], stride);
             push_history(&trackers[index], stride);
-            if(spt.next_conf(&trackers[index]) >= NON_UNI_THRESH){
-                //prefetch logic
+            for(int i =0; i < accuracy_tracker.degree(); i++){
+                if(spt.next_conf(&trackers[index]) < NON_UNI_THRESH)
+                    break;
+                
             }
             //state transition logic
             switcher.switch_state(&trackers[index]);
