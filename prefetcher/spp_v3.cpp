@@ -1,0 +1,364 @@
+#include "cache.h"
+#include <unordered_set>
+
+#define IP_TRACKER_COUNT 24
+#define PREFETCH_DEGREE 3
+#define MASK_IP 0xFF
+#define UNI_THRESHOLD 1
+#define DUMMY_PREFETCH 1000 //garbage value
+#define HISTORY_LENGTH 4
+#define SPP_TABLE_SIZE 32
+#define NON_UNI_PREFETCH_THRESH 2
+
+void updateCounter(int &counter, bool increment) {
+    if (increment) {
+        if (counter < 3) counter++;
+    } else {
+        if (counter > 0) counter--;
+    }
+}
+
+class switcher {
+    public : 
+
+    int counter;
+    int predictedStride;
+
+    bool uniformMode;
+
+    switcher(){
+        counter = UNI_THRESHOLD;
+        uniformMode = true;
+        predictedStride = DUMMY_PREFETCH;
+    }
+
+    void updateSwitcher(int stride){
+        if(predictedStride != DUMMY_PREFETCH){
+            updateCounter(counter , stride == predictedStride); 
+        }
+
+        if(counter >= UNI_THRESHOLD) uniformMode = true;
+        else uniformMode = false;
+    }
+
+    void updatePrediction(int pred){
+        predictedStride = pred;
+    }
+};
+
+class SPPTable{
+    public:
+    int predStrides[SPP_TABLE_SIZE];
+    int confidenceCounter[SPP_TABLE_SIZE];
+
+    SPPTable(){
+        for(int i = 0 ; i < SPP_TABLE_SIZE ; i++){
+            confidenceCounter[i] = 0;
+            predStrides[i] = 0;
+        }
+    }
+
+    int hash(const int history[HISTORY_LENGTH]){
+        unsigned int h = 0;
+
+        if(history[HISTORY_LENGTH-1] == DUMMY_PREFETCH)
+            return SPP_TABLE_SIZE;
+
+        for (int i = 0; i < HISTORY_LENGTH; i++) {
+            h = h * 31 + (history[i] + 31);
+        }
+
+        h ^= h >> 16;
+        h *= 0x45d9f3b;
+        h ^= h >> 16;
+
+        return h % SPP_TABLE_SIZE;
+    }
+
+    void updateSPPTable(int observedStride, const int history[HISTORY_LENGTH]) {
+        int idx = hash(history);
+        if(idx = SPP_TABLE_SIZE)
+            return;
+        if (observedStride != predStrides[idx] && confidenceCounter[idx] == 0){
+            predStrides[idx] = observedStride;
+            return;
+        }
+
+        updateCounter(confidenceCounter[idx], observedStride == predStrides[idx]);
+    }
+
+    
+};
+
+
+class IPTracker{
+    public:
+    uint64_t ip;
+    uint64_t lastCacheLine;
+    switcher mode;
+    int strideHistory[HISTORY_LENGTH];
+    int predictedStrides[PREFETCH_DEGREE];
+    int lru;
+    int time;
+    int uniformStride;
+    
+    IPTracker(){
+        ip = 0;
+        lastCacheLine = 0;
+        mode = switcher();
+        for(int i = 0 ; i < HISTORY_LENGTH ; i++){
+            strideHistory[i] = DUMMY_PREFETCH;
+        }
+        for(int i = 0 ; i < PREFETCH_DEGREE ; i++){
+            predictedStrides[i] = 0;
+        }
+        lru = 0;
+        time = 0;
+        uniformStride = DUMMY_PREFETCH;
+    }
+
+    void updateLRU(){
+        for(int i = 0; i <IP_TRACKER_COUNT; i++){
+            if(ipTrackers[i].lru < lru)
+                ipTrackers[i].lru++;
+        }
+        lru = 0;
+    }
+
+    void reset(uint64_t ipNew, uint64_t cacheLineAddress, int lruValue){
+        ip = ipNew;
+        lastCacheLine = cacheLineAddress;
+        mode = switcher();
+        for(int i = 0 ; i < HISTORY_LENGTH ; i++){
+            strideHistory[i] = DUMMY_PREFETCH;
+        }
+        for(int i = 0 ; i < PREFETCH_DEGREE ; i++){
+            predictedStrides[i] = 0;
+        }
+        lru = lruValue;
+        time = 0;
+        uniformStride = DUMMY_PREFETCH;
+    }
+
+    void updateHistory(int stride){
+        for(int i = HISTORY_LENGTH - 1 ; i > 0 ; i -- ){
+            strideHistory[i] = strideHistory[i-1];
+        }
+        strideHistory[0] = stride;
+    }
+};
+
+IPTracker ipTrackers[IP_TRACKER_COUNT];
+SPPTable spptable;
+
+void updateHistory(int stride , int* strideHistory){
+    for(int i = HISTORY_LENGTH - 1 ; i > 0 ; i -- ){
+        strideHistory[i] = strideHistory[i-1];
+    }
+    strideHistory[0] = stride;
+}
+
+int calculateStride(uint64_t newCacheLine, uint64_t oldCacheLine) {
+    constexpr int MOD = 1 << (LOG2_PAGE_SIZE - LOG2_BLOCK_SIZE); //number of cache lines/page
+    int offsetNew = newCacheLine % MOD;
+    int offsetOld = oldCacheLine % MOD;
+
+    // int stride = (offsetNew - offsetOld + MOD) % MOD;
+
+    // if (stride > MOD / 2)
+    //     stride -= MOD;
+    int stride = (offsetNew - offsetOld + MOD)%MOD;
+    return stride;
+}
+
+
+
+void CACHE::l1d_prefetcher_initialize() 
+{
+    //initialize lru
+    for(int i = 0; i < IP_TRACKER_COUNT; i++)
+        ipTrackers[i].lru = i;
+    //initialize degree
+}
+
+void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint8_t critical_ip_flag)
+{
+    // if (cache_hit)  accuracy_tracker.on_demand_hit(addr);
+    uint64_t cacheLineAddress = addr >> LOG2_BLOCK_SIZE;
+
+    bool entryFound = false;
+    int index = 0;
+    for(int i = 0 ; i < IP_TRACKER_COUNT ; i++){
+        if(ipTrackers[i].ip == ip){
+            entryFound = true;
+            index = i;
+            break;
+        }
+    }
+  
+    if(!entryFound){
+        for(int i = 0 ; i < IP_TRACKER_COUNT ; i ++ ){
+            if(ipTrackers[i].lru == IP_TRACKER_COUNT - 1){
+                ipTrackers[i].reset(ip,cacheLineAddress,0);
+            }
+            else{
+                ipTrackers[i].lru++;
+            }
+        }
+        return;
+    }
+    
+    if(!entryFound)
+        assert(0);
+    //update LRU
+    ipTrackers[index].updateLRU();
+    int stride = calculateStride(cacheLineAddress, ipTrackers[index].lastCacheLine);
+    ipTrackers[index].lastCacheLine = addr >> LOG2_BLOCK_SIZE;
+    // one phase that updates previous tracker
+    bool uniformMode = ipTrackers[index].mode.uniformMode;
+    if(!uniformMode){
+        spptable.updateSPPTable(stride,ipTrackers[index].strideHistory);
+    }
+    //state transition + confidence update
+    ipTrackers[index].mode.updateSwitcher(stride);
+    if(ipTrackers[index].mode.uniformMode != uniformMode) ipTrackers[index].uniformStride = DUMMY_PREFETCH;
+    ipTrackers[index].updateHistory(stride);
+    // ipTrackers[index].time++;
+    // prediction code still to be added
+    // if(ipTrackers[index].time < HISTORY_LENGTH){
+    //     return;
+    // }
+    // one phase that does prefetching from new tracker
+    if(!ipTrackers[index].mode.uniformMode){
+        int history[HISTORY_LENGTH];
+        for(int i = 0 ; i < PREFETCH_DEGREE ; i++){
+            history[i] = ipTrackers[index].strideHistory[i];
+        }
+        int i = 0;
+        for( ; i < PREFETCH_DEGREE ; i ++ ){
+            int index = spptable.hash(history);
+            int predStride = spptable.predStrides[index];
+            int conf = spptable.confidenceCounter[index];
+            if(conf > NON_UNI_PREFETCH_THRESH){ //uh, >=?
+                updateHistory(predStride,history);
+                ipTrackers[index].predictedStrides[i] = predStride;
+            }
+            else{
+                break;
+            }
+        }
+        for( ; i < PREFETCH_DEGREE ; i ++ ){
+            ipTrackers[index].predictedStrides[i] = 0;
+        }
+    }
+    else{
+        if(ipTrackers[index].uniformStride == DUMMY_PREFETCH){
+            ipTrackers[index].uniformStride = stride;
+            for(int i = 0 ; i < PREFETCH_DEGREE ; i ++ ){
+                ipTrackers[index].predictedStrides[i] = ipTrackers[index].uniformStride;
+            }
+        }
+    }
+    ipTrackers[index].mode.updatePrediction(ipTrackers[index].predictedStrides[0]);
+    stride = 0;
+    for (int i=0; i<PREFETCH_DEGREE; i++) {
+        stride+=ipTrackers[index].predictedStrides[i];
+        uint64_t pf_address = (cacheLineAddress + stride) << LOG2_BLOCK_SIZE;
+
+        // only issue a prefetch if the prefetch address is in the same 4 KB page
+        // as the current demand access address
+        if ((pf_address >> LOG2_PAGE_SIZE) != (addr >> LOG2_PAGE_SIZE))
+            break;
+
+        // check the MSHR occupancy to decide if we're going to prefetch to the L1 or L2
+        if (MSHR.occupancy < (MSHR.SIZE>>1))
+            prefetch_line(ip, addr, pf_address, FILL_L1, 0);
+        else
+            prefetch_line(ip, addr, pf_address, FILL_L2, 0);
+    }
+
+}
+
+void CACHE::l1d_prefetcher_cache_fill(uint64_t v_addr, uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint64_t v_evicted_addr, uint64_t evicted_addr, uint32_t metadata_in)
+{
+    // accuracy_tracker.on_fill(addr, prefetch != 0, evicted_addr);
+}
+
+void CACHE::l1d_prefetcher_final_stats()
+{
+    // accuracy_tracker.print();
+}
+
+
+
+// class accuracyTracker{
+//     int hits, misses; 
+//     int predictedStride;
+//     bool pageBoundaryIgnore = true;
+//     uint64_t lastCacheLine;
+
+//     accuracyTracker(){
+//         hits = 0;
+//         misses = 0;
+//         lastCacheLine = 0;
+//     }
+
+//     void updateAccuracy(uint64_t currentCacheLine,int stridePrediction){
+//         int stride = currentCacheLine - lastCacheLine;
+//         bool boundaryCheck = ((stride < 63) && (stride > -63)) | (!pageBoundaryIgnore);
+//         if(lastCacheLine != 0 && boundaryCheck){
+//             if(predictedStride == stride) hits++;
+//             else misses++;
+//         }
+//         lastCacheLine = currentCacheLine;
+//         predictedStride = stridePrediction;
+//     }
+// };
+
+
+// class PrefetchAccuracyTracker {
+// public:
+//     void on_fill(uint64_t addr, bool is_prefetch, uint64_t evicted_addr)
+//     {
+//         const uint64_t evicted_line = evicted_addr >> LOG2_BLOCK_SIZE;
+
+//         // If the evicted line was prefetched but never used, it was useless.
+//         if (prefetched_lines.erase(evicted_line) != 0)
+//             ++useless;
+
+//         if (is_prefetch) {
+//             prefetched_lines.insert(addr >> LOG2_BLOCK_SIZE);
+//             ++fills;
+//         }
+//     }
+
+//     void on_demand_hit(uint64_t addr)
+//     {
+//         const uint64_t line = addr >> LOG2_BLOCK_SIZE;
+
+//         // Erase it so one prefetch can only be counted useful once.
+//         if (prefetched_lines.erase(line) != 0)
+//             ++useful;
+//     }
+
+//     void print() const
+//     {
+//         const uint64_t resolved = useful + useless;
+//         const double accuracy = resolved == 0
+//             ? 0.0
+//             : 100.0 * useful / resolved;
+
+//         cout << "Prefetch fills: " << fills
+//                   << " useful: " << useful
+//                   << " useless: " << useless
+//                   << " resolved accuracy: " << accuracy << "%\n";
+//     }
+
+// private:
+//     std::unordered_set<uint64_t> prefetched_lines;
+//     uint64_t fills = 0;
+//     uint64_t useful = 0;
+//     uint64_t useless = 0;
+// };
+
+// static PrefetchAccuracyTracker accuracy_tracker;
