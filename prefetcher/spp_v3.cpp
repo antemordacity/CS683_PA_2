@@ -4,7 +4,7 @@
 #define IP_TRACKER_COUNT 24
 #define PREFETCH_DEGREE 3
 #define MASK_IP 0xFF
-#define UNI_THRESHOLD 1
+#define UNI_THRESHOLD 2
 #define DUMMY_PREFETCH 1000 //garbage value
 #define HISTORY_LENGTH 4
 #define SPP_TABLE_SIZE 32
@@ -27,13 +27,13 @@ class switcher {
     bool uniformMode;
 
     switcher(){
-        counter = UNI_THRESHOLD;
+        counter = UNI_THRESHOLD+1;
         uniformMode = true;
         predictedStride = DUMMY_PREFETCH;
     }
 
     void updateSwitcher(int stride){
-        if(predictedStride != DUMMY_PREFETCH){
+        if(predictedStride != DUMMY_PREFETCH && predictedStride != 0){
             updateCounter(counter , stride == predictedStride); 
         }
 
@@ -77,7 +77,7 @@ class SPPTable{
 
     void updateSPPTable(int observedStride, const int history[HISTORY_LENGTH]) {
         int idx = hash(history);
-        if(idx = SPP_TABLE_SIZE)
+        if(idx == SPP_TABLE_SIZE)
             return;
         if (observedStride != predStrides[idx] && confidenceCounter[idx] == 0){
             predStrides[idx] = observedStride;
@@ -117,13 +117,7 @@ class IPTracker{
         uniformStride = DUMMY_PREFETCH;
     }
 
-    void updateLRU(){
-        for(int i = 0; i <IP_TRACKER_COUNT; i++){
-            if(ipTrackers[i].lru < lru)
-                ipTrackers[i].lru++;
-        }
-        lru = 0;
-    }
+    void updateLRU();
 
     void reset(uint64_t ipNew, uint64_t cacheLineAddress, int lruValue){
         ip = ipNew;
@@ -150,6 +144,14 @@ class IPTracker{
 
 IPTracker ipTrackers[IP_TRACKER_COUNT];
 SPPTable spptable;
+
+void IPTracker::updateLRU(){
+        for(int i = 0; i <IP_TRACKER_COUNT; i++){
+            if(ipTrackers[i].lru < lru)
+                ipTrackers[i].lru++;
+        }
+        lru = 0;
+    }
 
 void updateHistory(int stride , int* strideHistory){
     for(int i = HISTORY_LENGTH - 1 ; i > 0 ; i -- ){
@@ -231,16 +233,16 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
     // one phase that does prefetching from new tracker
     if(!ipTrackers[index].mode.uniformMode){
         int history[HISTORY_LENGTH];
-        for(int i = 0 ; i < PREFETCH_DEGREE ; i++){
+        for(int i = 0 ; i < HISTORY_LENGTH ; i++){
             history[i] = ipTrackers[index].strideHistory[i];
         }
         int i = 0;
         for( ; i < PREFETCH_DEGREE ; i ++ ){
-            int index = spptable.hash(history);
-            if(index == SPP_TABLE_SIZE)
+            int table_index = spptable.hash(history);
+            if(table_index == SPP_TABLE_SIZE)
                 break;
-            int predStride = spptable.predStrides[index];
-            int conf = spptable.confidenceCounter[index];
+            int predStride = spptable.predStrides[table_index];
+            int conf = spptable.confidenceCounter[table_index];
             if(conf >= NON_UNI_PREFETCH_THRESH){ //uh, >=?
                 updateHistory(predStride,history);
                 ipTrackers[index].predictedStrides[i] = predStride;
@@ -264,6 +266,8 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
     ipTrackers[index].mode.updatePrediction(ipTrackers[index].predictedStrides[0]);
     stride = 0;
     for (int i=0; i<PREFETCH_DEGREE; i++) {
+        if(ipTrackers[index].predictedStrides[i] == 0)
+            continue;
         stride+=ipTrackers[index].predictedStrides[i];
         uint64_t pf_address = (cacheLineAddress + stride) << LOG2_BLOCK_SIZE;
 
