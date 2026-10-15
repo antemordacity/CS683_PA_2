@@ -1,79 +1,46 @@
-# ChampSim
+# ChampSim - CS683 PA2
 
-ChampSim is a trace-based simulator for microarchitecture research.
+ChampSim is a trace-based processor simulator. This branch implements Task 2a
+(static instruction-conscious RRIP V1/V2/V3) and Task 2b (Dynamic I-RRIP).
 
-Useful trace links:
-- Traces (access requires an LDAP ID): https://drive.google.com/drive/folders/1zYchkn-M1auZp_l5wRkIzAcDYPkNtW3H?usp=sharing
-- ChampSim wiki: https://champsim.github.io/ChampSim/master/index.html
+**The required Task 2 real-trace experiment matrix is complete.** The latest report uses
+one retained 25M warmup + 25M simulation dataset, including all five dynamic
+thresholds on Trace1/Trace2/Trace3.
 
-## Clone the repository
+- [Report and requirement checklist](TASK2_REPORT.md)
+- [Beginner setup, traces, running and troubleshooting](TASK2_README.md)
+- [Retained results](results/README.md)
+- [Teammate submission handoff](TASK2_TEAMMATE_HANDOFF.md)
+- [Commands and cleanup record](TASK2_COMMANDS.md)
+- [Task 3 team handoff: integrate SPP from shullies with this branch](TASK3_TEAMMATE_HANDOFF.md)
 
-```bash
-git clone https://github.com/cs683-iitb-autumn-2026/pa2.git
-```
+Task 3 implementation and experiments remain to be done on a branch based on
+this Task 2 code. The handoff identifies the SPP source, integration steps and
+required comparisons; Task 2 completion does not imply Task 3 completion.
 
-## Compile
+## Repository map
 
-To compile ChampSim, specify which config you to want use, such as baseline, spp, ipstride, irrip or dyn_irrip etc.
+`inc/` holds simulator declarations/configuration, `src/` implements the CPU/cache/
+memory machinery, `replacement/` holds replacement policies, `prefetcher/` holds
+prefetch policies, and `branch/` holds the branch predictor. Task 2 automation and
+tests are in `task2/`; experiment evidence is in `results/`.
 
-For example, `./build_champsim.sh baseline` builds a single-core processor with a hashed perceptron branch predictor, no L1D data prefetcher and LRU replacement policy at all cache levels.
-
-Your binary will have different name for different configs. Custom name help distinguish binaries for different configuration.
-
-```bash
-./build_champsim.sh ${config_name}
-
-./build_champsim.sh baseline
-
---Complied Binary: hashed_perceptron-no-no-no-no-no-no-no-lru-lru-lru-lru-lru-lru-lru-lru-1core-baseline
-```
-
-## Run simulation
+## Rerun when needed (Ubuntu / Linux)
 
 ```bash
-./bin/[BINARY] -warmup_instructions [N_WARM] -simulation_instructions [N_SIM] -traces [TRACE_DIR]/[TRACE]
-./bin/hashed_perceptron-no-no-no-no-no-no-no-lru-lru-lru-lru-lru-lru-lru-lru-1core-baseline -warmup_instructions 25000000 -simulation_instructions 25000000 -traces ../traces/trace1.champsimtrace.xz
+bash run_task2.sh --trace-dir "$HOME/traces" --mode smoke
+bash run_task2.sh --trace-dir "$HOME/traces" --mode full
 ```
 
-Where:
-- `${BINARY}`: ChampSim binary compiled by `build_champsim.sh baseline` (example, `hashed_perceptron-no-no-no-no-no-no-no-lru-lru-lru-lru-lru-lru-lru-lru-1core-baseline`)
-- `${N_WARM}`: number of instructions for the warmup period (25 million)
-- `${N_SIM}`: number of instructions for the detailed simulation (25 million)
-- `${TRACE_DIR}`: directory containing the trace (for example, `../traces/`)
-- `${TRACE}`: name of the trace (for example, `trace1.champsimtrace.xz`)
+Use course-provided compressed traces, stored outside Git. Do not use synthetic
+fixtures as assignment measurements. Install dependencies as described in the
+beginner guide; old GCC 7 installation instructions are no longer necessary.
+The retained full run used GCC 11.4, and development builds also passed GCC 13.3.
 
-## Evaluate the simulation
+The original `Makefile` and `build_champsim.sh` remain available for individual
+simulator builds; the Task 2 runner builds in isolated directories.
 
-ChampSim measures IPC (instructions per cycle) as its main performance metric. It also prints other useful metrics at the end of each simulation.
+Course resources:
 
-## Install GCC 7 on Ubuntu
-
-```bash
-sudo apt update
-sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-vim /etc/apt/sources.list
-```
-
-Update the last line with:
-
-```bash
-deb [arch=amd64] http://archive.ubuntu.com/ubuntu focal main universe
-```
-
-Then run:
-
-```bash
-sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-sudo apt-get install gcc-7
-sudo apt-get install g++-7
-sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 0
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 0
-```
-
-If GCC and G++ are already present in `/usr/bin`, configure the alternatives using:
-
-```bash
-sudo update-alternatives --config g++
-sudo update-alternatives --config gcc
-```
-
+- [Course traces (course-account access may be required)](https://drive.google.com/drive/folders/1zYchkn-M1auZp_l5wRkIzAcDYPkNtW3H?usp=sharing)
+- [ChampSim documentation](https://champsim.github.io/ChampSim/master/index.html)

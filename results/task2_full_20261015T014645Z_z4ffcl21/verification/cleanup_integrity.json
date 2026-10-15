@@ -1,0 +1,9 @@
+{
+  "protected_files_unchanged": 149,
+  "planned_paths_removed": 51,
+  "documentation_links_valid": true,
+  "simulator_source_unchanged": true,
+  "ignore_rules_verified": true,
+  "generated_artifacts_untracked": true,
+  "archive": ".task2-work/pre_cleanup.zip"
+}

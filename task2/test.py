@@ -14,15 +14,20 @@ sys.path.insert(0, str(ROOT))
 from parse_results import read_stats
 
 class ParserTests(unittest.TestCase):
-    def test_historical_all(self):
-        for path in (ROOT/'results').glob('*_Trace*.txt'):
-            read_stats(path)
+    def test_valid_fixture(self):
+        stats = read_stats(ROOT/'task2/tests/fixtures/valid_roi.txt')
+        self.assertEqual(stats['ipc'], 0.5)
+        self.assertEqual(stats['accesses'], stats['hits'] + stats['misses'])
+        self.assertEqual(stats['load_mpki'], 40)
+        self.assertEqual(stats['load_mpki'], stats['data_mpki'] + stats['instr_mpki'])
     def test_reject_corruption(self):
-        original = (ROOT/'results/lru_Trace1.txt').read_text()
+        original = (ROOT/'task2/tests/fixtures/valid_roi.txt').read_text()
         changes = [original.replace('ChampSim completed all CPUs','incomplete'),
-                   original.replace('CPU 0 cumulative IPC: 0.232345', 'CPU 0 cumulative IPC: 0.9'),
+                   re.sub(r'(CPU 0 cumulative IPC: )\S+', r'\g<1>0.9', original),
                    original.replace('L2C DATA LOAD MPKI:', 'missing data:'),
-                   original.replace('Simulation Instructions: 25000000', 'Simulation Instructions: 1')]
+                   re.sub(r'(Simulation Instructions: )\d+', r'\g<1>1', original),
+                   original.replace('ACCESS: 10', 'ACCESS: 11'),
+                   original.replace('DATA LOAD MPKI: 30', 'DATA LOAD MPKI: 31')]
         with tempfile.TemporaryDirectory() as d:
             path = Path(d)/'bad.txt'
             for text in changes:

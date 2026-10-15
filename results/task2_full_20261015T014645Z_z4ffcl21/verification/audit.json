@@ -1,0 +1,73 @@
+{
+  "run_directory": "/mnt/e/IITB/5th_Semester/CS683/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21",
+  "matrix_runs": 30,
+  "logs_validated": 31,
+  "repeat_matches": true,
+  "csv_matches_logs": true,
+  "plot_count": 10,
+  "compiler": "g++ (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+  "source_matches_build": true,
+  "removed_noncompiled_backups": [
+    "inc/sedD2leEO",
+    "inc/champsim.h.cp",
+    "inc/champsim.h.bak"
+  ],
+  "callback_sites": [
+    {
+      "file": "src/cache.cc",
+      "line": 140,
+      "code": "(this->*update_replacement_state)(fill_cpu, set, way, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].ip, 0, MSHR.entry[mshr_index].type, 0, MSHR.entry[mshr_index].instruction);"
+    },
+    {
+      "file": "src/cache.cc",
+      "line": 527,
+      "code": "(this->*update_replacement_state)(fill_cpu, set, way, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].ip, block[set][way].full_addr, MSHR.entry[mshr_index].type, 0, MSHR.entry[mshr_index].instruction);"
+    },
+    {
+      "file": "src/cache.cc",
+      "line": 559,
+      "code": "ooo_cpu[fill_cpu].DTLB_PB.update_replacement_state(fill_cpu, 0, way, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].ip, ooo_cpu[fill_cpu].DTLB_PB.block[0][victim_way].full_addr, MSHR.entry[mshr_index].type, 0, MSHR.entry[mshr_index].instruction);"
+    },
+    {
+      "file": "src/cache.cc",
+      "line": 819,
+      "code": "(this->*update_replacement_state)(writeback_cpu, set, way, block[set][way].full_addr, WQ.entry[index].ip, 0, WQ.entry[index].type, 1, WQ.entry[index].instruction);"
+    },
+    {
+      "file": "src/cache.cc",
+      "line": 1080,
+      "code": "(this->*update_replacement_state)(writeback_cpu, set, way, WQ.entry[index].full_addr, WQ.entry[index].ip, block[set][way].full_addr, WQ.entry[index].type, 0, WQ.entry[index].instruction);"
+    },
+    {
+      "file": "src/cache.cc",
+      "line": 1543,
+      "code": "ooo_cpu[read_cpu].DTLB_PB.update_replacement_state(read_cpu, 0, way_pb, ooo_cpu[read_cpu].DTLB_PB.block[0][way_pb].full_addr, RQ.entry[index].ip, 0, RQ.entry[index].type, 1, RQ.entry[index].instruction);"
+    },
+    {
+      "file": "src/cache.cc",
+      "line": 1766,
+      "code": "(this->*update_replacement_state)(read_cpu, set, way, block[set][way].full_addr, RQ.entry[index].ip, 0, RQ.entry[index].type, 1, RQ.entry[index].instruction);"
+    },
+    {
+      "file": "src/cache.cc",
+      "line": 2452,
+      "code": "(this->*update_replacement_state)(prefetch_cpu, set, way, block[set][way].full_addr, PQ.entry[index].ip, 0, PQ.entry[index].type, 1, PQ.entry[index].instruction);"
+    },
+    {
+      "file": "src/ooo_cpu.cc",
+      "line": 432,
+      "code": "(BTB.*BTB.update_replacement_state)(cpu, btb_set, btb_way, arch_instr.ip, arch_instr.ip, 0, 0, 1, 0);"
+    },
+    {
+      "file": "src/ooo_cpu.cc",
+      "line": 456,
+      "code": "(BTB.*BTB.update_replacement_state)(cpu, btb_set, btb_way, arch_instr.ip, arch_instr.ip, 0, 0, 1, 0);"
+    },
+    {
+      "file": "src/ooo_cpu.cc",
+      "line": 983,
+      "code": "(BTB.*BTB.update_replacement_state)(cpu, btb_set, btb_way, trigger, trigger, BTB.block[btb_set][btb_way].address, 0, 0, 0);"
+    }
+  ],
+  "declarations_and_definitions_checked": 30
+}

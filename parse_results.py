@@ -1,5 +1,6 @@
 """Parse ROI statistics; reject incomplete or internally inconsistent logs."""
 import math
+import argparse
 from pathlib import Path
 import re
 import sys
@@ -61,14 +62,16 @@ def parse(path):
 
 
 def main():
-    configs = sys.argv[1:]
-    if not configs:
-        raise SystemExit('Usage: python3 parse_results.py lru rrip irrip_v1 irrip_v2 irrip_v3')
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--input', required=True, type=Path, help='Directory containing the selected run logs')
+    parser.add_argument('configs', nargs='+', help='Policy names; first policy is the speedup baseline')
+    args = parser.parse_args()
+    configs = args.configs
     print(f"{'trace':7}{'config':12}{'IPC':>10}{'speedup':>9}{'L2C':>9}{'L2 Data':>9}{'L2 Instr':>9}")
     for tr in ['Trace1', 'Trace2', 'Trace3']:
-        base = parse(f'results/{configs[0]}_{tr}.txt')[0]
+        base = parse(args.input/f'{configs[0]}_{tr}.txt')[0]
         for c in configs:
-            ipc, load, data, inst = parse(f'results/{c}_{tr}.txt')
+            ipc, load, data, inst = parse(args.input/f'{c}_{tr}.txt')
             print(f'{tr:7}{c:12}{ipc:10.6f}{ipc/base:9.4f}{load:9.3f}{data:9.3f}{inst:9.3f}')
 
 if __name__ == '__main__':

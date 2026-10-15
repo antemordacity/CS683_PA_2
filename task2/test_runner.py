@@ -5,11 +5,12 @@ from pathlib import Path
 import subprocess
 ROOT=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser(description=__doc__)
-p.add_argument('--trace',default=str(ROOT/'results/task2_audit/synthetic/synthetic.champsimtrace.gz'))
+p.add_argument('--trace',required=True,help='Generated .gz fixture from integration_test.py, not course traces')
 p.add_argument('--output',required=True,help='New directory for fixture aliases and the runner log')
 a=p.parse_args()
 trace=Path(a.trace).resolve()
 if not trace.is_file(): raise SystemExit('Generate the synthetic trace with integration_test.py first')
+if trace.suffix.lower() != '.gz': raise SystemExit('Expected a gzip-compressed synthetic fixture')
 out=Path(a.output).resolve(); out.mkdir(parents=True,exist_ok=False)
 fixture=out/'inputs'; fixture.mkdir()
 (fixture/'.SYNTHETIC_TEST_ONLY').write_text('Generated fixture, NOT the assignment Trace1/Trace2/Trace3.\n')

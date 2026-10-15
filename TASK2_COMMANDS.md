@@ -1,116 +1,106 @@
-# Task 2 command and verification record
+# Task 2 commands and cleanup record
 
-Commands below were executed from `E:\IITB\5th_Semester\CS683\CS683_PA_2`, or its WSL path `/mnt/e/IITB/5th_Semester/CS683/CS683_PA_2`. Linux commands were invoked through `wsl -d Ubuntu-24.04 -- ...` from the Windows session. Paths printed with UTC timestamps are run identifiers; the user-facing audit date is 15 October 2026 in Asia/Calcutta.
+## Retained experiment
 
-## Inspection
+The report uses only `results/task2_full_20261015T014645Z_z4ffcl21/`:
 
-Read `README.md`, all three RRIP policy files and LRU/base replacement code, `inc/cache.h`, relevant `src/cache.cc`, `src/main.cc`, `src/ooo_cpu.cc`, `src/page_table_walker.cc`, `inc/champsim.h`, `inc/instruction.h`, `Makefile`, `build_champsim.sh`, `run3.sh`, `run_all.sh`, `run_ladder.sh`, all reporting scripts, the historical table, and benchmark logs. Used `rg` searches for replacement callbacks, instruction propagation, statistics, RNG seeding, trace reading, and compiler warnings. Inspected the four original PNG plots and the new plots with the image viewer.
+- Full mode, 25M warmup + 25M measured instructions.
+- All 30 policy/threshold/trace combinations plus one reproducibility repeat.
+- GCC 11.4.0 on Ubuntu 22.04, recorded in the build manifest.
+- Trace sources were `/home/tanish/traces/Trace1.gz`, `Trace2.gz`, and `Trace3.gz` on the teammate's machine.
+- All 31 logs parse successfully, the repeat matches, and the original test summary reports success.
 
-Repository checks:
+Exact historical simulator argument arrays, trace hashes, compiler commands and source hashes are retained in the run's `manifest.json` and `build/manifest.json`. Absolute paths are records of the original machine; they are not instructions to recreate that user's home directory.
 
-```text
-git branch --show-current
-git ls-files
-git status --short
-git diff --stat
-git diff --check
-```
-
-The branch is `tan`. Initial tracked worktree changes were empty. No commit, push, reset, cleanup/delete, or modification of unrelated task source was performed.
-
-## Environment setup and PDF inspection
-
-```powershell
-wsl --list --quiet
-wsl -d Ubuntu-24.04 -- bash -lc 'command -v g++ make python3 pdftotext; ls -ld ~/traces; find /home -maxdepth 3 -iname *trace* 2>/dev/null; python3 -m pip show matplotlib pypdf'
-wsl -d Ubuntu-24.04 -- sudo -n apt-get update
-wsl -d Ubuntu-24.04 -u root -- bash -lc 'apt-get update && apt-get install -y build-essential python3-matplotlib poppler-utils'
-```
-
-Initial sandbox enumeration: access denied; approved external enumeration: succeeded, Ubuntu-24.04 installed. One earlier nested-shell Python package probe had a quotation syntax error; the corrected probe above established the missing toolchain/packages. `sudo -n` failed because a password was required. The explicitly approved WSL-root install succeeded. Native Windows Python initially lacked numpy/matplotlib and PDF packages; the working verification environment is WSL Ubuntu with GCC 13.3, Python 3.12, and matplotlib 3.6.3.
+The required experiment entry points are:
 
 ```bash
-pdftotext -layout Summary.pdf results/task2_audit/Summary_extracted.txt
-```
-
-All pages of the extracted report were read. Original PDF/HTML files were not regenerated or overwritten.
-
-## Compilation and policy/parser tests
-
-```bash
-python3 task2/build.py --output results/task2_audit/build
-python3 task2/test.py --output results/task2_audit/tests
-python3 task2/test.py --output results/task2_audit/tests_final
-```
-
-Build passed for `lru`, `rrip`, `irrip_v1`, `irrip_v2`, `irrip_v3`, and `dyn_irrip`. Exact compiler/linker argument arrays and source hashes are in `results/task2_audit/build/manifest.json`; warning output is retained in its `.log` files. No compiler correction was needed.
-
-The initial tests passed, then the suite was expanded with direct static/dynamic equivalence and mixed request types. The expanded suite passed: six policies, two 10K-event equivalence cases, deterministic repeats, seven invalid thresholds, and two Python parser tests (including all 18 historical logs and four corruption cases).
-
-Native Python source audits:
-
-```powershell
-python task2/audit.py results/task2_audit/source_audit
-python task2/audit.py results/task2_audit/source_audit_final
-```
-
-First invocation: audit helper rejected a multiline signature because it assumed one-line definitions. After fixing the helper, final audit passed 11 call sites, 30 signatures, 15 old table rows and preservation of 30 original artifacts. Failed/partial output directories were retained.
-
-## Historical measurement validation and plots
-
-```bash
-python3 task2/analyze.py --input results --output results/task2_audit/historical --historical --expected 25000000
-```
-
-Passed all 15 primary logs and the three historical LRU repeat comparisons. Generated `metrics.csv`, `validated.json`, `TABLES.md`, and five PNGs including IPC. Old reports, plots and logs remain unchanged.
-
-## New synthetic simulator tests (not assignment benchmarks)
-
-```bash
-python3 task2/integration_test.py --build results/task2_audit/build --output results/task2_audit/synthetic
-python3 task2/test_runner.py
-```
-
-The first command passed 13 actual simulator invocations: LRU, RRIP, V1/V2/V3, dynamic thresholds 0, 0.10, 0.20, 0.25, 0.35, 0.50, 1, and a repeated dynamic 0.25 run. Every run used 100K warmup + 100K simulation. Individual simulator commands and parsed records are saved in `synthetic/summary.json`. The dynamic 0.25 repeat matched exactly; dynamic 1 matched ordinary RRIP performance statistics.
-
-The runner test generated explicitly marked synthetic aliases and invoked the real shell runner with `--mode smoke`. Its 30 matrix simulations plus one repeat completed successfully. The runner output is in `results/task2_audit/runner_synthetic.log`; the complete result directory is:
-
-```text
-results/task2_smoke_20261014T234839Z_n_l4t8zf/
-```
-
-This directory contains a second six-variant isolated build, tests, 31 logs, validated synthetic metrics/tables, five comparison plots and five sensitivity plots. **Every plotted synthetic dataset is marked SYNTHETIC TEST ONLY.** The fixture contains no course Trace1/2/3 data. These are 31 workflow test invocations, not the required full experiments.
-
-The runner's manifest contains the exact simulator commands and environments. Test scripts were subsequently made rerunnable with an explicit new output directory; see their `--help` and the beginner README.
-
-## Required commands against the real trace location
-
-```bash
-bash -n run_task2.sh
 bash run_task2.sh --trace-dir "$HOME/traces" --mode smoke
 bash run_task2.sh --trace-dir "$HOME/traces" --mode full
 ```
 
-Shell syntax check passed. Both runner commands failed at trace preflight, before building or simulating:
+No new simulation was performed during cleanup. The original experiment's raw logs, CSV, JSON, tables, plots, source snapshot, manifests, compiler logs and test text/JSON were preserved byte-for-byte.
 
-```text
-Task 2 failed: /home/sailesh/traces: need exactly one Trace1.gz/.xz or trace1.champsimtrace.gz/.xz; found 0
-```
+## Cleanup applied on branch tan
 
-No new 25M + 25M assignment simulation was performed. No real dynamic sensitivity measurement is available.
+The user authorized cleanup after review. Changes were limited to documentation, analysis/test tooling, ignore rules, superseded artifacts and rebuildable outputs. No simulator or replacement-policy implementation changed.
 
-## Final verification
+1. Added `task2/tests/fixtures/valid_roi.txt`, explicitly synthetic parser-only input, replacing the dependency on `results/lru_Trace1.txt` and a hardcoded historical IPC.
+2. Updated `task2/audit.py` and `task2/final_checks.py` to accept `--run-dir`, validate the selected matrix/logs/CSV/source hashes, and operate without old audit/smoke folders.
+3. Made the synthetic runner's `--trace` explicit and added `--input` to the parser CLI.
+4. Updated the report to use the latest 30-row table, real dynamic diagnostics, threshold discussion and all ten plots. Updated the root README, beginner guide and teammate handoff; added `results/README.md`.
+5. Archived superseded reports/results/scripts and unused header backups in ignored `.task2-work/pre_cleanup.zip` before removing them from the working tree. Earlier committed versions also remain accessible at Git commit `7da94cc`.
+6. Removed generated full-run binaries, objects and test executables, and removed them from Git's index. Their text/JSON evidence and original source snapshot remain.
+7. Added ignore rules for Python caches, local test work, compiler outputs, audit/smoke runs, generated full-run executables, traces and editor backups. Final logs/manifests/plots are not ignored.
 
-```text
-python -m py_compile parse_results.py task2/build.py task2/analyze.py task2/run.py task2/test.py task2/audit.py task2/integration_test.py task2/test_runner.py
-```
+The archive contains 466 files/symlinks and passed ZIP integrity checks. Windows `Compress-Archive` initially failed on WSL symlinks without deleting the source files; the archive was then created through WSL with symlink metadata preserved. PowerShell resolved every deletion target and checked that it remained inside the repository before removal. A total of 51 planned file/directory paths were removed. The archive and cleanup plan are local ignored artifacts, not report inputs.
 
-Final verification was run with:
+Untracking generated artifacts stages their deletions. Other edits and retired tracked files remain visible in `git status` for review. No commit, push, history rewrite or change to another branch was performed. Existing binary objects remain in old Git history; `.gitignore` does not purge history.
+
+## Checks executed during cleanup
+
+From the repository root (Linux commands were invoked through WSL Ubuntu-24.04):
 
 ```bash
-python3 task2/final_checks.py --output results/task2_audit/final_verification
+python3 -m unittest task2.test.ParserTests -v
+python3 task2/audit.py --run-dir results/task2_full_20261015T014645Z_z4ffcl21 --output .task2-work/precleanup-audit
+python3 task2/final_checks.py --run-dir results/task2_full_20261015T014645Z_z4ffcl21 --output .task2-work/cleanup-checks
 ```
 
-It passed all checks. Exact nested commands and their exit codes are recorded in `results/task2_audit/final_verification/checks.txt`, including the expanded test suite, source audit, historical re-analysis, synthetic comparison/sensitivity report generation, final simulator source-hash comparison, and missing/ambiguous trace rejection. A deliberately injected pre-build failure verified that the runner preserves a manifest marked `failed_or_interrupted`; it did not run another simulator.
+The first two checks passed before removal. The final suite runs after removal and includes:
 
-The first final-check attempt is preserved in `results/task2_audit/final_checks.txt`. WSL Git initially interpreted Windows CRLF checkout files as whole-file modifications and rejected trailing carriage returns. `git -c core.autocrlf=true diff --check` passed with a command-local setting; no Git configuration or unrelated source was modified. New run output directories refuse overwrites by design.
+- Shell syntax and Git whitespace checks.
+- Six actual policy harness builds with undefined-behavior checks and deterministic repeats.
+- Actual static/dynamic equivalence over 10,000 events per mode.
+- Seven invalid-threshold cases and independent parser acceptance/rejection tests.
+- Eleven callback sites and thirty signatures.
+- Complete full-run matrix, 31 logs, matching repeat, CSV consistency, source hashes and ten existing plots.
+- Regeneration of tables and all ten plots into an ignored output directory.
+- Trace-discovery, missing-file and ambiguous-name checks.
+
+The retained cleanup verification logs are in `results/task2_full_20261015T014645Z_z4ffcl21/verification/`. Generated executables and regenerated duplicate plots stay under ignored `.task2-work/`.
+
+Additional read-only checks compare SHA-256 hashes of all 149 protected full-run files before/after cleanup, verify documentation links, inspect Git's tracked/ignored paths, and confirm the simulator source matches the experiment. Cleanup does not require another benchmark run.
+
+## Re-run checks later
+
+Use a fresh output directory:
+
+```bash
+RUN_DIR=results/task2_full_20261015T014645Z_z4ffcl21
+python3 task2/final_checks.py --run-dir "$RUN_DIR" --output .task2-work/recheck
+python3 parse_results.py --input "$RUN_DIR/logs" lru rrip irrip_v1 irrip_v2 irrip_v3
+```
+
+The local archive and deleted old datasets are not prerequisites for either command. See `TASK2_README.md` for optional full reruns or synthetic integration tests. Read `TASK2_REPORT.md` for the final measurements and requirement checklist.
+
+## Task 3 handoff preparation (2026-10-15)
+
+After cleanup, the user requested publishing the baseline for teammates to start
+Task 3, and identified `shullies` as the team's SPP branch. The earlier statements
+about no commit/push describe the cleanup phase, before this publishing request.
+
+Fetched `origin` and inspected `origin/shullies` at
+`ac2ab4c28fd9041c3cb7ace3ae17d30ce15b035e`. Its simulator-source changes from the
+common base are confined to `prefetcher/spp.l1d_pref`. Added
+`TASK3_TEAMMATE_HANDOFF.md` with a pinned file import, branch workflow, code map,
+comparison matrix, metric caveats and delivery checklist. Linked it from the
+root README and Task 2 handoff. No simulator/policy/SPP source was changed, and
+no Task 3 simulation was performed. The separate local report repository
+`6ad0fab29071bd1c410a25a6/` is excluded from this code handoff.
+
+Verification executed successfully through WSL Ubuntu-24.04:
+
+```bash
+git fetch origin
+git diff --name-only origin/main...origin/shullies -- src inc prefetcher replacement Makefile build_champsim.sh
+git show origin/shullies:prefetcher/spp.l1d_pref
+python3 task2/final_checks.py --run-dir results/task2_full_20261015T014645Z_z4ffcl21 --output .task2-work/handoff-checks
+```
+
+All policy/parser checks, both 10,000-event equivalence checks, the 31-log audit,
+source/CSV/repeat checks and regeneration of ten plots passed. The new execution
+log is local at `.task2-work/handoff-checks/checks.txt`; the retained cleanup
+verification under `results/.../verification/` remains unchanged. Task 3's
+prefetch-aware implementation, counter validation and comparable experiments
+are assigned to the Task 3 team in the new handoff.

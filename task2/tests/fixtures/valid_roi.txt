@@ -1,0 +1,9 @@
+SYNTHETIC PARSER FIXTURE ONLY - not a simulator measurement.
+Warmup Instructions: 100
+Simulation Instructions: 100
+ChampSim completed all CPUs
+Region of Interest Statistics
+CPU 0 cumulative IPC: 0.5 instructions: 100 cycles: 200
+L2C LOAD ACCESS: 10 HIT: 6 MISS: 4 MPKI: 40
+L2C DATA LOAD MPKI: 30
+L2C INSTRUCTION LOAD MPKI: 10

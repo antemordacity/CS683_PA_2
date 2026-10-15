@@ -1,4 +1,31 @@
+# Python and local verification outputs
 __pycache__/
-*.pyc
-results/task2_audit/
-results/task2_smoke_*/
+*.py[cod]
+.venv/
+/.task2-work/
+
+# Rebuildable compiler outputs
+/bin/
+/obj/
+*.o
+*.d
+
+# Development-only experiments
+/results/task2_audit/
+/results/task2_smoke_*/
+
+# Keep full-run measurements and provenance; ignore executable artifacts
+/results/task2_full_*/build/bin/
+/results/task2_full_*/build/obj/
+/results/task2_full_*/tests/*
+!/results/task2_full_*/tests/*.txt
+!/results/task2_full_*/tests/*.json
+
+# Local input traces (normally stored outside this repository)
+/traces/
+*.champsimtrace.gz
+*.champsimtrace.xz
+
+# Editor backups
+*.bak
+*~
