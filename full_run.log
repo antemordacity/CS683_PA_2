@@ -1,0 +1,47 @@
+Results: /home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21
+Built lru
+Built rrip
+Built irrip_v1
+Built irrip_v2
+Built irrip_v3
+Built dyn_irrip
+PASS lru
+PASS rrip
+PASS irrip_v1
+PASS irrip_v2
+PASS irrip_v3
+PASS dynamic
+PASS static/dynamic equivalence over 10000 events per mode
+PASS invalid thresholds and parser tests
+Running lru Trace1
+Running lru Trace2
+Running lru Trace3
+Running rrip Trace1
+Running rrip Trace2
+Running rrip Trace3
+Running irrip_v1 Trace1
+Running irrip_v1 Trace2
+Running irrip_v1 Trace3
+Running irrip_v2 Trace1
+Running irrip_v2 Trace2
+Running irrip_v2 Trace3
+Running irrip_v3 Trace1
+Running irrip_v3 Trace2
+Running irrip_v3 Trace3
+Running dyn_0.10 Trace1
+Running dyn_0.10 Trace2
+Running dyn_0.10 Trace3
+Running dyn_0.20 Trace1
+Running dyn_0.20 Trace2
+Running dyn_0.20 Trace3
+Running dyn_0.25 Trace1
+Running dyn_0.25 Trace2
+Running dyn_0.25 Trace3
+Running dyn_0.35 Trace1
+Running dyn_0.35 Trace2
+Running dyn_0.35 Trace3
+Running dyn_0.50 Trace1
+Running dyn_0.50 Trace2
+Running dyn_0.50 Trace3
+Validated 30 logs; tables and plots: /home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/analysis
+Completed: /home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/analysis/TABLES.md
