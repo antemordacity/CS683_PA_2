@@ -1,0 +1,16 @@
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/cache.cc: In member function ‘void CACHE::handle_read()’:
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/cache.cc:1750:27: warning: suggest explicit braces to avoid ambiguous ‘else’ [-Wdangling-else]
+ 1750 |                         if(warmup_complete[read_cpu])
+      |                           ^
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/cache.cc:1749:34: warning: variable ‘l2c_mpki’ set but not used [-Wunused-but-set-variable]
+ 1749 |                         uint32_t l2c_mpki; // = (ooo_cpu[fill_cpu].L2C.sim_access[fill_cpu][0]*1000)/(ooo_cpu[fill_cpu].num_retired);
+      |                                  ^~~~~~~~
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/cache.cc:2375:39: warning: suggest explicit braces to avoid ambiguous ‘else’ [-Wdangling-else]
+ 2375 |                                     if(warmup_complete[read_cpu])
+      |                                       ^
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/cache.cc:2374:46: warning: variable ‘l2c_mpki’ set but not used [-Wunused-but-set-variable]
+ 2374 |                                     uint32_t l2c_mpki; // = (ooo_cpu[fill_cpu].L2C.sim_access[fill_cpu][0]*1000)/(ooo_cpu[fill_cpu].num_retired);
+      |                                              ^~~~~~~~
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/cache.cc:2243:61: warning: ‘prior_data’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+ 2243 |                                 MSHR.entry[mshr_index].data = prior_data;
+      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~

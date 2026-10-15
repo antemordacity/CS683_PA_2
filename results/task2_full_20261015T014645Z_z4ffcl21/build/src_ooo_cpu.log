@@ -1,0 +1,16 @@
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/ooo_cpu.cc:508:25: warning: "/*" within comment [-Wcomment]
+  508 |                         /*
+      |                          
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/ooo_cpu.cc:895:50: warning: "/*" within comment [-Wcomment]
+  895 |         ////DP ( if (warmup_complete[cpu]) {    //*******************************************************************************************
+      |                                                   
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/ooo_cpu.cc:927:9: warning: "/*" within comment [-Wcomment]
+  927 |         /*fetch_packet.address = ROB.entry[fetch_index].instruction_pa >> 6;
+      |          
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/ooo_cpu.cc:949:13: warning: "/*" within comment [-Wcomment]
+  949 |             /*
+      |              
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/ooo_cpu.cc: In member function ‘void O3_CPU::complete_instr_fetch(PACKET_QUEUE*, uint8_t)’:
+/home/tanish/CS683_PA_2/results/task2_full_20261015T014645Z_z4ffcl21/build/source/src/ooo_cpu.cc:2344:19: warning: comparison of integer expressions of different signedness: ‘uint32_t’ {aka ‘unsigned int’} and ‘int’ [-Wsign-compare]
+ 2344 |     if (rob_index != (a = check_rob(queue->entry[index].instr_id)))
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

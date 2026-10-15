@@ -1,0 +1,134 @@
+#include "cache.h"
+#include <cerrno>
+#include <cmath>
+
+// Runtime TASK2_THRESHOLD overrides the default without recompilation.
+#ifndef DYN_IRRIP_THRESHOLD
+#define DYN_IRRIP_THRESHOLD 0.25
+#endif
+#ifndef DYN_IRRIP_LEADERS
+#define DYN_IRRIP_LEADERS 32
+#endif
+static_assert(DYN_IRRIP_LEADERS > 0 && DYN_IRRIP_LEADERS <= L2C_SET,
+              "invalid leader count");
+static_assert(L2C_SET % DYN_IRRIP_LEADERS == 0, "leaders must divide L2C_SET");
+
+namespace {
+struct DynamicState {
+    uint8_t rrpv[L2C_SET][L2C_WAY];
+    uint64_t ia, im, da, dm, switches;
+    uint64_t leader_updates, rrip_updates, irrip_updates;
+    uint64_t rrip_victims, irrip_victims;
+    bool use_irrip;
+    double threshold;
+};
+DynamicState dyn[NUM_CPUS];
+
+bool leader(uint32_t set)
+{
+    const uint32_t stride = L2C_SET / DYN_IRRIP_LEADERS;
+    return set % stride == stride / 2;
+}
+
+double metric(const DynamicState& s)
+{
+    const uint64_t denominator = s.ia + s.da + s.im + s.dm;
+    return denominator ? double(s.ia + s.im) / denominator : 0.0;
+}
+
+}
+
+void CACHE::l2c_initialize_replacement()
+{
+    DynamicState& s = dyn[cpu];
+    s = DynamicState{};
+    s.threshold = DYN_IRRIP_THRESHOLD;
+    if (const char* value = std::getenv("TASK2_THRESHOLD")) {
+        char* end = nullptr;
+        errno = 0;
+        s.threshold = std::strtod(value, &end);
+        if (end == value || *end || errno || !std::isfinite(s.threshold)
+            || s.threshold < 0.0 || s.threshold > 1.0) {
+            std::cerr << "TASK2_THRESHOLD must be a finite number in [0,1]" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+    }
+    for (uint32_t set = 0; set < L2C_SET; ++set)
+        for (uint32_t way = 0; way < L2C_WAY; ++way)
+            s.rrpv[set][way] = 3;
+    std::cout << "DYN_CONFIG cpu=" << cpu << " threshold=" << s.threshold
+              << " leaders=" << DYN_IRRIP_LEADERS << " sets=" << L2C_SET
+              << " scope=warmup_and_roi counting=completed_hits_and_fills leader_ids=";
+    for (uint32_t set = 0; set < L2C_SET; ++set)
+        if (leader(set)) std::cout << set << ',';
+    std::cout << std::endl;
+}
+
+uint32_t CACHE::l2c_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set,
+    const BLOCK* current_set, uint64_t ip, uint64_t full_addr, uint32_t type)
+{
+    DynamicState& s = dyn[cpu];
+    // No sampling here: a blocked fill may call victim selection repeatedly.
+    const bool use_irrip = !leader(set) && s.use_irrip;
+    if (use_irrip) ++s.irrip_victims; else ++s.rrip_victims;
+    for (uint32_t way = 0; way < L2C_WAY; ++way)
+        if (!current_set[way].valid) return way;
+    while (true) {
+        if (use_irrip)
+            for (uint32_t way = 0; way < L2C_WAY; ++way)
+                if (s.rrpv[set][way] == 3 && !current_set[way].instruction) return way;
+        for (uint32_t way = 0; way < L2C_WAY; ++way)
+            if (s.rrpv[set][way] == 3) return way;
+        for (uint32_t way = 0; way < L2C_WAY; ++way) ++s.rrpv[set][way];
+    }
+}
+
+void CACHE::l2c_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way,
+    uint64_t full_addr, uint64_t ip, uint64_t victim_addr, uint32_t type,
+    uint8_t hit, uint8_t isInstruction)
+{
+    assert(set < L2C_SET && way < L2C_WAY);
+    DynamicState& s = dyn[cpu];
+    const bool is_leader = leader(set);
+    const bool use_irrip = !is_leader && s.use_irrip;
+    // Use the packet flag exactly as static I-RRIP does. The victim tie-break
+    // uses the resident BLOCK flag maintained by CACHE::fill_cache.
+    const bool instr = isInstruction != 0;
+    if (is_leader) ++s.leader_updates;
+    else if (use_irrip) ++s.irrip_updates;
+    else ++s.rrip_updates;
+    if (!hit) s.rrpv[set][way] = use_irrip && instr ? 0 : 2;
+    else if (!use_irrip || instr) s.rrpv[set][way] = 0;
+    else if (s.rrpv[set][way]) --s.rrpv[set][way];
+
+    // Exactly one access per successful callback, plus one miss for a fill.
+    // MSHR merges are not separate completed accesses in ChampSim's counters.
+    if (is_leader) {
+        if (instr) { ++s.ia; if (!hit) ++s.im; }
+        else       { ++s.da; if (!hit) ++s.dm; }
+        const bool next = metric(s) >= s.threshold;
+        if (next != s.use_irrip) {
+            ++s.switches;
+            if (s.switches <= 16)
+                std::cout << "DYN_SWITCH cpu=" << cpu << " sample=" << s.ia+s.da
+                          << " metric=" << metric(s) << " mode="
+                          << (next ? "IRRIP3" : "RRIP") << std::endl;
+            s.use_irrip = next;
+        }
+    }
+}
+
+void CACHE::l2c_replacement_final_stats()
+{
+    const DynamicState& s = dyn[cpu];
+    std::cout << std::setprecision(12)
+              << "DYN_STATS cpu=" << cpu << " threshold=" << s.threshold
+              << " ia=" << s.ia << " im=" << s.im << " da=" << s.da << " dm=" << s.dm
+              << " metric=" << metric(s) << " mode=" << (s.use_irrip ? "IRRIP3" : "RRIP")
+              << " switches=" << s.switches << " leader_updates=" << s.leader_updates
+              << " follower_rrip_updates=" << s.rrip_updates
+              << " follower_irrip_updates=" << s.irrip_updates
+              << " rrip_victim_calls=" << s.rrip_victims
+              << " irrip_victim_calls=" << s.irrip_victims
+              << std::setprecision(6) << std::endl;
+}

@@ -1,0 +1,10 @@
+DYN_CONFIG cpu=0 threshold=0.25 leaders=32 sets=1024 scope=warmup_and_roi counting=completed_hits_and_fills leader_ids=16,48,80,112,144,176,208,240,272,304,336,368,400,432,464,496,528,560,592,624,656,688,720,752,784,816,848,880,912,944,976,1008,
+DYN_SWITCH cpu=0 sample=1 metric=1 mode=IRRIP3
+DYN_SWITCH cpu=0 sample=7 metric=0.222222 mode=RRIP
+DYN_SWITCH cpu=0 sample=4 metric=0.25 mode=IRRIP3
+DYN_CONFIG cpu=0 threshold=0.25 leaders=32 sets=1024 scope=warmup_and_roi counting=completed_hits_and_fills leader_ids=16,48,80,112,144,176,208,240,272,304,336,368,400,432,464,496,528,560,592,624,656,688,720,752,784,816,848,880,912,944,976,1008,
+DYN_SWITCH cpu=0 sample=1 metric=1 mode=IRRIP3
+DYN_CONFIG cpu=0 threshold=0.25 leaders=32 sets=1024 scope=warmup_and_roi counting=completed_hits_and_fills leader_ids=16,48,80,112,144,176,208,240,272,304,336,368,400,432,464,496,528,560,592,624,656,688,720,752,784,816,848,880,912,944,976,1008,
+DYN_SWITCH cpu=0 sample=5 metric=0.333333 mode=IRRIP3
+DYN_STATS cpu=0 threshold=0.25 ia=164 im=87 da=157 dm=82 metric=0.512244897959 mode=IRRIP3 switches=1 leader_updates=321 follower_rrip_updates=91 follower_irrip_updates=9588 rrip_victim_calls=413 irrip_victim_calls=9588
+PASS policy=3
