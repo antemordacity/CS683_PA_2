@@ -43,10 +43,11 @@ def main():
     traces = find_traces(args.trace_dir)  # Fail before expensive compilation.
     synthetic = (Path(args.trace_dir).expanduser()/'.SYNTHETIC_TEST_ONLY').exists()
     for command in [os.environ.get('CXX','g++'), 'gzip', 'xz']:
-        if not shutil.which(command): raise ValueError(f'Missing command: {command}; see TASK2_README.md')
+        if not shutil.which(command): raise ValueError(f'Missing command: {command}; see TASK3_TEAMMATE_HANDOFF.md for setup')
     import matplotlib  # Fail early with an actionable package name.
     budget = 100000 if args.mode == 'smoke' else 25000000
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    (ROOT/'results').mkdir(exist_ok=True)
     out = Path(tempfile.mkdtemp(prefix=f'task2_{args.mode}_{stamp}_', dir=ROOT/'results'))
     print('Results:', out, flush=True)
     # ChampSim invokes a shell with an unquoted trace path. Use safe absolute

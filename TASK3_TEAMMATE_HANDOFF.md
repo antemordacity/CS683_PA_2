@@ -8,6 +8,47 @@ The Task 3 team should create a new branch from the cleaned `origin/tan`, import
 
 SPP source inspected on 2026-10-15: `origin/shullies` at **`ac2ab4c28fd9041c3cb7ace3ae17d30ce15b035e`**. That branch's simulator-source changes from `origin/main` are confined to `prefetcher/spp.l1d_pref`. It also contains many historical experiments and binaries. Source inspection confirms prefetch generation using `prefetch_line` with `FILL_L1`/`FILL_L2`; this handoff does not certify SPP correctness or its performance.
 
+## What is included in this branch
+
+This branch tracks simulator source, build/experiment/test scripts, the synthetic
+parser fixture, the license and this handoff. Other Markdown files, reports and
+`results/` are ignored and were removed from Git tracking, while their local
+copies were preserved on the report author's machine. A fresh clone does not
+contain those reports or measurements. The complete verified Task 2 material is
+still available at commit `febc4df0e6c7c60fdadf79df95a278faab348751`:
+
+- [Task 2 report and policy explanations](https://github.com/antemordacity/CS683_PA_2/blob/febc4df0e6c7c60fdadf79df95a278faab348751/TASK2_REPORT.md)
+- [Detailed setup and troubleshooting](https://github.com/antemordacity/CS683_PA_2/blob/febc4df0e6c7c60fdadf79df95a278faab348751/TASK2_README.md)
+- [Verified experiment evidence](https://github.com/antemordacity/CS683_PA_2/tree/febc4df0e6c7c60fdadf79df95a278faab348751/results/task2_full_20261015T014645Z_z4ffcl21)
+
+Package the final report, tables, plots and evidence separately for submission.
+Ignoring them does not remove the assignment's reporting requirements or erase
+previous Git history. Share new Task 3 results separately with the report author.
+
+## Minimal setup (Ubuntu / WSL)
+
+From the repository root in Linux:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential python3 python3-matplotlib gzip xz-utils
+mkdir -p "$HOME/traces"
+# Place the actual course Trace1.gz, Trace2.gz and Trace3.gz here.
+# Exactly one compressed .gz or .xz copy per trace; do not add traces to Git.
+python3 task2/test.py --output .task2-work/policy-check
+bash run_task2.sh --trace-dir "$HOME/traces" --mode smoke
+# Optional full Task 2 rerun, not a Task 3 experiment:
+bash run_task2.sh --trace-dir "$HOME/traces" --mode full
+```
+
+Use a fresh test output directory each time. The runner creates `results/` on a
+fresh clone; generated outputs stay local. Tests use the committed synthetic
+fixture and do not require old results. Auditing old measurements with
+`task2/audit.py` or `task2/final_checks.py` requires supplying the saved dataset
+via `--run-dir`; those commands cannot audit measurements absent from a clone.
+The retained measurements used GCC 11.4 on Ubuntu 22.04. For comparable new runs,
+record the compiler and use the same settings across every control/candidate.
+
 ## Start here: commands for the Task 3 team
 
 Run these in your own clean checkout. Save any current work on your existing branch before switching; do not discard it. For a fresh checkout, first clone `https://github.com/antemordacity/CS683_PA_2.git` and enter it.
@@ -42,8 +83,8 @@ These are **handoff instructions**, not a claim that SPP was imported into `tan`
 | `run_task2.sh`, `task2/build.py`, `task2/run.py` | Isolated Task 2 experiment automation. **The Task 2 builder selects `no` for all prefetchers.** |
 | `parse_results.py`, `task2/analyze.py` | Reusable parsing/plotting foundations; Task 3 requires additional metrics and configurations. |
 | `task2/test.py`, `task2/tests/` | Policy, counter, threshold, equivalence and parser tests. |
-| `TASK2_REPORT.md`, `TASK2_README.md` | Verified explanation/results and installation/trace instructions. |
-| `results/task2_full_20261015T014645Z_z4ffcl21/` | Frozen Task 2 logs, manifests, source snapshots, CSV and plots. Preserve unchanged. |
+| Archived `TASK2_REPORT.md`, `TASK2_README.md` | Verified explanation/results and setup; use the pinned links above. Not included in fresh clones. |
+| Local/archived `results/task2_full_20261015T014645Z_z4ffcl21/` | Frozen Task 2 evidence at the pinned link above. Preserve unchanged; not tracked in the current branch. |
 
 Dynamic I-RRIP keeps 32 deterministically distributed RRIP-only leader sets. Successful replacement updates count one access, plus one miss on a fill; victim selection does not sample, because a stalled fill can retry. Leader instruction/non-instruction counts drive `(instruction accesses + instruction misses) / (total accesses + total misses)`. Followers use I-RRIP V3 when this metric is at least the threshold, otherwise RRIP. The default threshold is 0.25, overridden with `TASK2_THRESHOLD`; statistics accumulate across warmup and simulation. Empty statistics start in RRIP. Invalid ways are selected first. `DYN_CONFIG`, `DYN_SWITCH` and `DYN_STATS` provide diagnostics.
 
@@ -62,7 +103,7 @@ Before real runs, verify SPP actually issues prefetches and that the replacement
 
 ## Comparable experiments still required
 
-Use Trace1, Trace2 and Trace3, each with **25 million warmup and 25 million simulation instructions**, identical simulator configuration, trace bytes, compiler/options and seed handling. Store traces outside Git, normally in `$HOME/traces`; use `TASK2_README.md` for setup.
+Use Trace1, Trace2 and Trace3, each with **25 million warmup and 25 million simulation instructions**, identical simulator configuration, trace bytes, compiler/options and seed handling. Store traces outside Git, normally in `$HOME/traces`; use the setup instructions above or the pinned detailed guide.
 
 | Configuration | L1D prefetcher | L2 replacement | Purpose |
 | --- | --- | --- | --- |

@@ -1,7 +1,0 @@
-test_reject_corruption (__main__.ParserTests.test_reject_corruption) ... ok
-test_valid_fixture (__main__.ParserTests.test_valid_fixture) ... ok
-
-----------------------------------------------------------------------
-Ran 2 tests in 0.011s
-
-OK

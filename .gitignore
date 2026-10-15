@@ -10,16 +10,16 @@ __pycache__/
 *.o
 *.d
 
-# Development-only experiments
-/results/task2_audit/
-/results/task2_smoke_*/
+# Reports and experiment artifacts remain local; submit them separately.
+/results/
+*.md
+!/TASK3_TEAMMATE_HANDOFF.md
+*.pdf
+*.html
+*.tex
 
-# Keep full-run measurements and provenance; ignore executable artifacts
-/results/task2_full_*/build/bin/
-/results/task2_full_*/build/obj/
-/results/task2_full_*/tests/*
-!/results/task2_full_*/tests/*.txt
-!/results/task2_full_*/tests/*.json
+# Separate local report repository
+/6ad0fab29071bd1c410a25a6/
 
 # Local input traces (normally stored outside this repository)
 /traces/

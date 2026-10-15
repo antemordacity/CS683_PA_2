@@ -1,4 +1,0 @@
-==================================
-Initializing IRRIP L2C replacement (version 3)
-==================================
-PASS policy=2

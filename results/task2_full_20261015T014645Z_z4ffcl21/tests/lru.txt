@@ -1,2 +1,0 @@
-test has LRU replacement policy
-PASS policy=0
