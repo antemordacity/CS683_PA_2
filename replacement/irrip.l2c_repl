@@ -10,7 +10,10 @@
  *   2 : + promotion     - instruction hits go to 0, data hits move only one step
  *   3 : + eviction      - among max-RRPV lines, evict a data line first
  */
+#ifndef IRRIP_VERSION
 #define IRRIP_VERSION 3
+#endif
+static_assert(IRRIP_VERSION >= 1 && IRRIP_VERSION <= 3, "IRRIP_VERSION must be 1, 2 or 3");
 
 #define maxRRPV 3
 #define INSTR_INSERT_RRPV 0               // instruction fill: kept close to MRU
@@ -33,6 +36,10 @@ void CACHE::l2c_initialize_replacement()
 // find replacement victim
 uint32_t CACHE::l2c_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type)
 {
+    // Invalidation can leave a low RRPV: empty entries always win.
+    for (int way = 0; way < L2C_WAY; ++way)
+        if (!current_set[way].valid)
+            return way;
     while (1)
     {
 #if IRRIP_VERSION >= 3

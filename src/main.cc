@@ -1751,7 +1751,6 @@ int main(int argc, char** argv)
 	    ooo_cpu[i].l1i_prefetcher_final_stats();
             ooo_cpu[i].L1D.l1d_prefetcher_final_stats();
             ooo_cpu[i].L2C.l2c_prefetcher_final_stats();
-	    ooo_cpu[i].L2C.l2c_replacement_final_stats();
 	    ooo_cpu[i].STLB.stlb_prefetcher_final_stats();
 #endif
             print_sim_stats(i, &uncore.LLC);
@@ -1812,6 +1811,7 @@ int main(int argc, char** argv)
 
     for (uint32_t i=0; i<NUM_CPUS; i++) {
         ooo_cpu[i].l1i_prefetcher_final_stats();
+        ooo_cpu[i].L2C.l2c_replacement_final_stats();
 	ooo_cpu[i].L1D.l1d_prefetcher_final_stats();
         ooo_cpu[i].L2C.l2c_prefetcher_final_stats();
 	ooo_cpu[i].DTLB.dtlb_prefetcher_final_stats();

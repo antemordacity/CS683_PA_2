@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+results/task2_audit/
+results/task2_smoke_*/
