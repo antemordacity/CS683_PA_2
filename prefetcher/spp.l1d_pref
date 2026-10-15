@@ -42,6 +42,10 @@ static_assert(ACCURACY_REGIME_1_DEGREE >= 0 &&
               ACCURACY_REGIME_5_DEGREE <= MAX_PREFETCH_DEGREE,
               "Each accuracy regime degree must fit the prediction array");
 
+// This is responsible for tracking prefetch accuracy and it resets its counters every epoch
+// It maintains an unordered set of prefetched lines (This could be implemented in hardware using pre existed prefetch bits)
+// Whenever a prefetched line is used it removes it from this set and increases useful counter 
+// Whenever a prefetched line is evicted without use it increases the useless counter
 class PrefetchAccuracyTracker {
 public:
     void reset(uint64_t cycle)
@@ -132,6 +136,7 @@ private:
 
 static PrefetchAccuracyTracker accuracy_tracker;
 
+// function to update a saturating counter
 void updateCounter(int &counter, bool increment) {
     if (increment) {
         if (counter < CONFIDENCE_COUNTER_MAX) counter++;
@@ -140,6 +145,7 @@ void updateCounter(int &counter, bool increment) {
     }
 }
 
+// class that helps decide which prefetch state
 class switcher {
 public:
     int counter;
@@ -153,6 +159,7 @@ public:
         predictedStride = DUMMY_PREFETCH;
     }
 
+    // feed it observed stride and it uses the same to change its internal confidence counter
     void updateSwitcher(int stride)
     {
         if (predictedStride != DUMMY_PREFETCH) {
@@ -163,12 +170,14 @@ public:
         uniformMode = counter >= UNI_THRESHOLD;
     }
 
+    // feed it the next stride prediction
     void updatePrediction(int pred)
     {
         predictedStride = pred == 0 ? DUMMY_PREFETCH : pred;
     }
 };
 
+// class that maintains the spptable
 class SPPTable {
 public:
     int predStrides[SPP_TABLE_SIZE];
@@ -184,6 +193,7 @@ public:
 
     int hash(const int signature, int time)
     {
+        // We only use a signature whose size is 12 bits and calculate the has correspondingly
         uint32_t h = static_cast<uint32_t>(signature) & 0xFFF;
         if (time < HISTORY_LENGTH)
             return SPP_TABLE_SIZE;
@@ -195,6 +205,7 @@ public:
         return static_cast<int>(h % SPP_TABLE_SIZE);
     }
 
+    // Compares the predicted stride with the observed stride and correspondingly updates the counter associated with each line
     void updateSPPTable(int observedStride, const int signature, int time)
     {
         const int idx = hash(signature, time);
@@ -210,6 +221,7 @@ public:
     }
 };
 
+// This is the class that is responsible for performing prefetching
 class IPTracker {
 public:
     uint16_t ip;
@@ -218,7 +230,7 @@ public:
     int64_t signature;
     int predictedStrides[MAX_PREFETCH_DEGREE];
     int lru;
-    int time;
+    int time;   // this is used to stop prefetching by non uniform mode if signature has not been built up yet
     int uniformStride;
 
     IPTracker()
@@ -234,8 +246,10 @@ public:
         uniformStride = DUMMY_PREFETCH;
     }
 
+    //updates the LRU counters of all the trackers on hit
     void updateLRU();
 
+    // used to empty and reset a tracker
     void reset(uint16_t ipNew, uint16_t cacheLineAddress, int lruValue)
     {
         ip = ipNew;
@@ -249,6 +263,7 @@ public:
         uniformStride = DUMMY_PREFETCH;
     }
 
+    // used to modify the history signature when a stride is observed
     void updateHistory(int stride)
     {
         stride = stride & 0x7F;
@@ -268,12 +283,14 @@ void IPTracker::updateLRU()
     lru = 0;
 }
 
+// helper function for degree > 1 non uniform prefetches
 int64_t updateHistory(int stride, int signature)
 {
     signature = (signature << 3) ^ stride;
     return signature;
 }
 
+// helper function that calculates stride given new and old cache line
 int calculateStride(uint16_t newCacheLine, uint16_t oldCacheLine)
 {
     const uint16_t wrapped_delta = static_cast<uint16_t>(newCacheLine - oldCacheLine);
@@ -281,6 +298,7 @@ int calculateStride(uint16_t newCacheLine, uint16_t oldCacheLine)
         ? static_cast<int>(wrapped_delta)
         : static_cast<int>(wrapped_delta) - 0x10000;
 }
+
 
 void CACHE::l1d_prefetcher_initialize()
 {
@@ -301,6 +319,7 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
         static_cast<uint16_t>(cacheLineAddress & MASK_CACHE_LINE);
     bool entryFound = false;
     int index = 0;
+    // look for an entry in iptracker table that matches
     for (int i = 0; i < IP_TRACKER_COUNT; i++) {
         if (ipTrackers[i].ip == maskedIp) {
             entryFound = true;
@@ -309,6 +328,7 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
         }
     }
 
+    // if an entry is not found allocate one
     if (!entryFound) {
         for (int i = 0; i < IP_TRACKER_COUNT; i++) {
             if (ipTrackers[i].lru == IP_TRACKER_COUNT - 1)
@@ -319,22 +339,31 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
         return;
     }
 
+    // there was a pre existing entry
     ipTrackers[index].updateLRU();
     int stride = 0;
     stride = calculateStride(maskedCacheLine, ipTrackers[index].lastCacheLine);
     ipTrackers[index].lastCacheLine = maskedCacheLine;
 
+    // if stride is out of bounds or 0 do nothing
     if (stride > 63 || stride < -63 || stride == 0)
         return;
 
     ipTrackers[index].time++;
+    // checks if the prefetcher was in uniform mode
     const bool uniformMode = ipTrackers[index].mode.uniformMode;
+
+    // if it was not in uniform mode update the spptable
     if (!uniformMode)
         spptable.updateSPPTable(stride, ipTrackers[index].signature, ipTrackers[index].time);
 
+    // send the actual stride to switcher 
     ipTrackers[index].mode.updateSwitcher(stride);
+
+    // if mode changed from uniform to non uniform set predicted uniform stride to dummy vlaue
     if (uniformMode && !ipTrackers[index].mode.uniformMode)
         ipTrackers[index].uniformStride = DUMMY_PREFETCH;
+
     ipTrackers[index].updateHistory(stride);
 
     if (!ipTrackers[index].mode.uniformMode) {
@@ -342,11 +371,13 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
         int i = 0;
         for (; i < MAX_PREFETCH_DEGREE; i++) {
             const int table_index = spptable.hash(sig, ipTrackers[index].time);
+            // if signature hasn't been built yet skip 
             if (table_index == SPP_TABLE_SIZE)
                 break;
-
             const int predStride = spptable.predStrides[table_index];
             const int conf = spptable.confidenceCounter[table_index];
+
+            // if confidence is above a threshold predict stride and use for prefetching
             if (conf >= NON_UNI_PREFETCH_THRESH) {
                 sig = static_cast<int>(updateHistory(predStride, sig));
                 ipTrackers[index].predictedStrides[i] = predStride;
@@ -354,15 +385,21 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
                 break;
             }
         }
+        // fills remaining prefetch requests as 0
         for (; i < MAX_PREFETCH_DEGREE; i++)
             ipTrackers[index].predictedStrides[i] = 0;
-    } else if (ipTrackers[index].uniformStride == DUMMY_PREFETCH) {
+    } 
+    // if in uniform mode but the stride hasn't been set yet use observed stride
+    else if (ipTrackers[index].uniformStride == DUMMY_PREFETCH) {
         ipTrackers[index].uniformStride = stride;
         for (int i = 0; i < MAX_PREFETCH_DEGREE; i++)
             ipTrackers[index].predictedStrides[i] = ipTrackers[index].uniformStride;
     }
 
+    // feed predicted stride to the switcher
     ipTrackers[index].mode.updatePrediction(ipTrackers[index].predictedStrides[0]);
+    
+    // resetting before performing prefetching
     stride = 0;
     for (int i = 0; i < accuracy_tracker.degree(); i++) {
         if (ipTrackers[index].predictedStrides[i] == 0)
