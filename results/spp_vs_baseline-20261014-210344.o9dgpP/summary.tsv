@@ -1,0 +1,7 @@
+trace	configuration	status	ipc	l1d_mpki	load_mpki	prefetch_useful	prefetch_useless	prefetch_accuracy	tracker_useful	tracker_useless	tracker_accuracy	log
+Trace2-003.gz	baseline	completed	0.25113	18.7345	13.5338	0	0	-nan	NA	NA	NA	baseline__Trace2-003.log
+Trace2-003.gz	switch-2_spp-2_counter-6	completed	0.251026	20.0657	13.4231	9970	26781	25.7144	30574	43272	41.4024%	switch-2_spp-2_counter-6__Trace2-003.log
+Trace2-003.gz	switch-2_spp-2_counter-4	completed	0.251025	20.0614	13.42	10033	26692	25.8849	30615	43116	41.5226%	switch-2_spp-2_counter-4__Trace2-003.log
+Trace3-002.gz	baseline	completed	0.382061	5.03708	3.40324	0	0	-nan	NA	NA	NA	baseline__Trace3-002.log
+Trace3-002.gz	switch-2_spp-2_counter-6	completed	0.385304	6.13904	3.09264	9583	25673	21.1798	42575	60491	41.3085%	switch-2_spp-2_counter-6__Trace3-002.log
+Trace3-002.gz	switch-2_spp-2_counter-4	completed	0.385283	6.12612	3.09476	9516	25366	21.2924	42153	59911	41.3006%	switch-2_spp-2_counter-4__Trace3-002.log

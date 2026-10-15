@@ -1,0 +1,9 @@
+switch_threshold	spp_threshold	confidence_max	status	log
+2	1	4	completed	switch-2_spp-1_counter-4.log
+2	1	6	completed	switch-2_spp-1_counter-6.log
+2	2	4	completed	switch-2_spp-2_counter-4.log
+2	2	6	completed	switch-2_spp-2_counter-6.log
+3	1	4	completed	switch-3_spp-1_counter-4.log
+3	1	6	completed	switch-3_spp-1_counter-6.log
+3	2	4	completed	switch-3_spp-2_counter-4.log
+3	2	6	completed	switch-3_spp-2_counter-6.log

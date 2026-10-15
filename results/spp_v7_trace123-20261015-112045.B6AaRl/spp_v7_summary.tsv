@@ -1,0 +1,4 @@
+trace	configuration	ipc	l1d_total_mpki	l1d_load_mpki	l1d_load_misses	baseline_load_misses	misses_avoided	coverage	prefetches_issued	prefetch_hits	accuracy_hits_per_issued	simulator_useful_load_accuracy	log
+Trace1-001.gz	spp_v7	0.234043	16.3128	9.74584	243646	266968	23322	8.7359%	631820	30100	4.7640%	48.8986%	Trace1-001.log
+Trace2-003.gz	spp_v7	0.251392	19.4947	13.3528	333821	338345	4524	1.3371%	359409	8715	2.4248%	33.5812%	Trace2-003.log
+Trace3-002.gz	spp_v7	0.385109	5.69292	3.12348	78087	85081	6994	8.2204%	640249	8030	1.2542%	25.2009%	Trace3-002.log

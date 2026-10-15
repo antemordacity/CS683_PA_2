@@ -1,0 +1,26 @@
+
+=======================================================================
+ ERROR: Invalid number of arguments supplied.
+=======================================================================
+
+Usage: ./build_champsim.sh <Name Config> 
+
+L1d Prefetchers:
+  1) IP Stride       : ./build_champsim.sh ipstride
+  2) SPP             : ./build_champsim.sh spp
+  3) No Prefetcher   : ./build_champsim.sh baseline
+
+L2 Replacement Policies:
+  1) LRU             : ./build_champsim.sh baseline
+  1) RRIP            : ./build_champsim.sh rrip
+  2) IRRIP           : ./build_champsim.sh irrip
+  3) Dynamic IRRIP   : ./build_champsim.sh dyn_irrip
+
+L1d Prefetcher + L2 Replacement Policy
+  1) SPP + Dynamic IRRIP : ./build_champsim.sh spp+dyn_irrip
+  2) IP Stride + RRIP : ./build_champsim.sh ipstride+rrip
+
+Example:
+  ./build_champsim.sh baseline
+
+=======================================================================

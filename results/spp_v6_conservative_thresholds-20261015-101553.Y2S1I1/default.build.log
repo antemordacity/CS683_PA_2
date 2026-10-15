@@ -1,0 +1,31 @@
+tput: No value for $TERM and no -T specified
+tput: No value for $TERM and no -T specified
+Building single-core ChampSim...
+
+rm -f -r obj
+Generating dependencies for src/main.cc...
+Compiling src/main.cc...
+In file included from /usr/include/getopt.h:24:0,
+                 from src/main.cc:3:
+/usr/include/features.h:184:3: warning: #warning "_BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE" [-Wcpp]
+ # warning "_BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE"
+   ^~~~~~~
+src/main.cc: In function 'int main(int, char**)':
+src/main.cc:1183:129: warning: format '%d' expects argument of type 'int*', but argument 4 has type 'uint8_t* {aka unsigned char*}' [-Wformat=]
+  while((fscanf(context_switch_file, "%ld %d %d", &cs_file[index].cycle, &cs_file[index].swap_cpu[0], &cs_file[index].swap_cpu[1]))!=EOF)
+                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~                             ^
+src/main.cc:1183:129: warning: format '%d' expects argument of type 'int*', but argument 5 has type 'uint8_t* {aka unsigned char*}' [-Wformat=]
+src/main.cc:1500:49: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+      if( cs_index!=-1 && ( current_core_cycle[i]==cs_file[cs_index].cycle) && (i==cs_file[cs_index].swap_cpu[0] || i==cs_file[cs_index].swap_cpu[1]))
+                            ~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~
+src/main.cc:1511:11: warning: 'index' may be used uninitialized in this function [-Wmaybe-uninitialized]
+           if(cs_index >= index)
+           ^~
+Generating dependencies for src/uncore.cc...
+In file included from src/uncore.cc:1:0:
+inc/uncore.h:4:10: fatal error: champsim.h: No such file or directory
+compilation terminated.
+make: *** [Makefile:50: obj/src/uncore.o] Error 1
+
+ChampSim build FAILED!
+

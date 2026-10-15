@@ -1,0 +1,2 @@
+trace	thresholds	degree_mapping	epoch_cycles	status	ipc	l1d_total_mpki	l1d_load_mpki	l1d_load_misses	baseline_load_misses	misses_avoided	coverage	prefetches_issued	prefetch_hits	accuracy_hits_per_issued	simulator_useful_load_accuracy	log
+Trace1-001.gz	10,20,30,40	1,2,3,4,5	1000	completed	0.233834	16.70840	9.67444	241861	266968	25107	9.4045%	858760	33666	3.9203%	44.8282%	Trace1-001.log

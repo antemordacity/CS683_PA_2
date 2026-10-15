@@ -1,0 +1,4 @@
+trace	ipc	l1d_mpki	load_mpki	prefetches_issued	useful_hits	useful_accuracy
+Trace1-001.gz	0.233848	16.8513	9.7044	932151	33941	43.6894
+Trace2-003.gz	0.250987	20.1222	13.3852	574631	11122	27.2725
+Trace3-002.gz	0.38532	6.20076	3.08128	1059591	9942	20.7043

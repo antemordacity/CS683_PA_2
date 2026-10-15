@@ -1,0 +1,3 @@
+trace	configuration	status	ipc	l1d_mpki	load_mpki	prefetch_useful	prefetch_useless	prefetch_accuracy	tracker_useful	tracker_useless	tracker_accuracy	log
+Trace2-003.gz	ipstride	completed	0.251186	19.0268	13.4356	4374	6326	38.1276	NA	NA	NA	ipstride__Trace2-003.log
+Trace3-002.gz	ipstride	completed	0.382962	5.49172	3.31768	2738	10618	16.0936	NA	NA	NA	ipstride__Trace3-002.log

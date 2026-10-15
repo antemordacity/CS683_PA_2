@@ -1,0 +1,4 @@
+trace	configuration	accuracy_bounds	degree_mapping	epoch_cycles	status	ipc	l1d_load_misses	baseline_load_misses	misses_avoided	coverage	l1d_load_mpki	prefetches_issued	useful_load_prefetches	useful_load_accuracy	log
+Trace1-001.gz	conservative-1-1-2-2-3	20,40,60,80	1,1,2,2,3	1000	completed	0.234024	244028	266968	22940	8.5928%	9.76112	604505	29464	49.2569%	/Users/vikas/Desktop/sem5/ACA/CS683_PA_2/results/spp_v6_trace1_oat-20261015-095739.GF0uNA/epoch-1000_conservative-map.log
+Trace2-003.gz	conservative-1-1-2-2-3	20,40,60,80	1,1,2,2,3	1000	completed	0.251401	333880	338345	4465	1.3197%	13.3552	348628	8562	33.8807%	conservative-1-1-2-2-3__Trace2-003.log
+Trace3-002.gz	conservative-1-1-2-2-3	20,40,60,80	1,1,2,2,3	1000	completed	0.384963	78994	85081	6087	7.1544%	3.15976	604650	7034	25.225%	conservative-1-1-2-2-3__Trace3-002.log

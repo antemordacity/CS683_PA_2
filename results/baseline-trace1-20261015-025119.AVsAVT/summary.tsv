@@ -1,0 +1,2 @@
+trace	ipc	l1d_mpki	load_mpki	prefetches_issued	useful_hits	accuracy
+Trace1-001.gz	0.232204	15.1754	10.6787	0	0	NA

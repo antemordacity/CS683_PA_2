@@ -1,0 +1,10 @@
+trace	configuration	accuracy_bounds	degree_mapping	epoch_cycles	status	ipc	l1d_load_misses	baseline_load_misses	misses_avoided	coverage	l1d_load_mpki	prefetches_issued	useful_hits	useful_accuracy	log
+Trace1-001.gz	lower-threshold	10,20,30,40	1,2,3,4,5	1000	completed	0.234043	243646	266968	23322	8.7359%	9.74584	631820	30100	48.8986%	/Users/vikas/Desktop/sem5/ACA/CS683_PA_2/results/spp_v6_trace1_consmap-20261015-101741.JkzosN/threshold-lower.log
+Trace1-001.gz	mild-aggressive	20,40,60,80	1,1,3,5,5	1000	completed	0.233894	242041	266968	24927	9.3371%	9.68164	824179	33064	45.6162%	/Users/vikas/Desktop/sem5/ACA/CS683_PA_2/results/spp_v6_trace1_consmap-20261015-101741.JkzosN/map-mild-aggressive.log
+Trace1-001.gz	combined	10,20,30,40	1,1,3,5,5	1000	completed	0.233861	241775	266968	25193	9.4367%	9.671	862604	77210	44.8629%	combined__Trace1-001.log
+Trace2-003.gz	lower-threshold	10,20,30,40	1,2,3,4,5	1000	completed	0.251461	333371	338345	4974	1.4701%	13.3348	484070	39122	30.8288%	lower-threshold__Trace2-003.log
+Trace2-003.gz	mild-aggressive	20,40,60,80	1,1,3,5,5	1000	completed	0.251487	333412	338345	4933	1.4580%	13.3365	469231	37687	31.3452%	mild-aggressive__Trace2-003.log
+Trace2-003.gz	combined	10,20,30,40	1,1,3,5,5	1000	completed	0.251475	333479	338345	4866	1.4382%	13.3392	480852	38923	30.8023%	combined__Trace2-003.log
+Trace3-002.gz	lower-threshold	10,20,30,40	1,2,3,4,5	1000	completed	0.385764	76136	85081	8945	10.5135%	3.04544	882122	44789	25.0461%	lower-threshold__Trace3-002.log
+Trace3-002.gz	mild-aggressive	20,40,60,80	1,1,3,5,5	1000	completed	0.385594	77350	85081	7731	9.0866%	3.094	815891	41999	25.8744%	mild-aggressive__Trace3-002.log
+Trace3-002.gz	combined	10,20,30,40	1,1,3,5,5	1000	completed	0.385697	76094	85081	8987	10.5629%	3.04376	878246	44595	25.0718%	combined__Trace3-002.log

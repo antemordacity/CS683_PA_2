@@ -1,0 +1,1 @@
+trace	threshold_set	accuracy_bounds	epoch_cycles	degree_mapping	status	ipc	l1d_mpki	load_mpki	l1d_load_misses	baseline_load_misses	misses_avoided	coverage	prefetches_issued	useful_hits	useful_accuracy	log

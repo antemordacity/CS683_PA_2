@@ -1,0 +1,3 @@
+trace	epoch_cycles	degree_mapping	accuracy_bounds	status	ipc	l1d_mpki	load_mpki	prefetches_issued	useful_hits	useful_accuracy	log
+Trace1-001.gz	1000	default (1,2,3,4,5)	10.0,20.0,40.0,70.0	completed	0.233859	16.6576	9.67804	840279	33349	45.429	lower-bands.log
+Trace1-001.gz	1000	default (1,2,3,4,5)	30.0,60.0,80.0,90.0	completed	0.233879	16.569	9.69896	779439	32471	46.0843	upper-bands.log

@@ -1,0 +1,6 @@
+trace	varied_factor	accuracy_bounds	degree_mapping	epoch_cycles	status	ipc	l1d_mpki	load_mpki	l1d_load_misses	baseline_load_misses	misses_avoided	coverage	prefetches_issued	useful_hits	useful_accuracy	log
+Trace1-001.gz	thresholds	10.0,20.0,30.0,40.0	1,1,2,2,3	1000	completed	0.234043	16.3128	9.74584	243646	266968	23322	8.7359%	631820	30100	48.8986	threshold-lower.log
+Trace1-001.gz	thresholds	10.0,30.0,50.0,70.0	1,1,2,2,3	1000	completed	0.234013	16.272	9.75356	243839	266968	23129	8.6636%	612270	29701	49.3069	threshold-middle.log
+Trace1-001.gz	thresholds	30.0,60.0,80.0,90.0	1,1,2,2,3	1000	completed	0.234027	16.2268	9.7764	244410	266968	22558	8.4497%	583493	28905	49.3259	threshold-upper.log
+Trace1-001.gz	mapping	20.0,40.0,60.0,80.0	1,1,3,5,5	1000	completed	0.233894	16.6274	9.68164	242041	266968	24927	9.3371%	824179	33064	45.6162	map-mild-aggressive.log
+Trace1-001.gz	mapping	20.0,40.0,60.0,80.0	1,1,1,2,2	1000	completed	0.234024	16.0529	9.83496	245874	266968	21094	7.9013%	484577	26427	50.7197	map-low-degree.log

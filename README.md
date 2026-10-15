@@ -66,6 +66,73 @@ Where:
 - `${TRACE_DIR}`: directory containing the trace (for example, `../traces/`)
 - `${TRACE}`: name of the trace (for example, `trace1.champsimtrace.xz`)
 
+To run a built binary with the README's default instruction counts, pass its
+name (looked up in `bin/`) and a trace name:
+
+```bash
+./run_simulation.sh hashed_perceptron-no-no-no-no-no-no-no-lru-lru-lru-lru-lru-lru-lru-lru-1core-baseline trace1.champsimtrace.xz
+```
+
+You can also pass paths to the binary and trace. For a trace name, the script
+looks in the current directory, `../traces/`, and `/traces/` (the Docker mount).
+It runs the supplied binary as-is; it does not rebuild it or change its
+configuration.
+
+### Sweep SPP thresholds
+
+To compare SPP settings on the same trace, run:
+
+```bash
+./sweep_spp_parameters.sh trace1.champsimtrace.xz
+```
+
+The default sweep tries switch thresholds `2 3`, SPP confidence thresholds
+`1 2`, and confidence-counter maxima `4 6` (eight builds/runs total). Results,
+logs, and each tested binary are saved under a timestamped directory in
+`results/`. You can change the instruction counts with optional second and
+third arguments, or override the tested values with `SWITCH_THRESHOLDS`,
+`SPP_THRESHOLDS`, and `CONFIDENCE_MAXES`; see the script's usage text for an
+example. The optional fourth argument sets the number of experiments to run
+concurrently (default `2`), or set it with `PARALLEL_JOBS`. Each experiment
+builds and runs in its own temporary project copy inside the `gcc:7` Docker
+image, so concurrent builds do not modify the source tree or interfere with
+one another. Docker Desktop must be running.
+
+To run IP-stride on the other available `Trace*.gz` traces (excluding
+`Trace1-001.gz`) and compare with the SPP results already saved from the
+previous comparison, run:
+
+```bash
+./compare_spp_traces.sh
+```
+
+It uses 25 million warmup and simulation instructions per trace by default.
+Its TSV includes total L1D prefetches issued and useful prefetches (hits), as
+well as IPC, MPKI, and prefetch accuracy.
+Optional arguments set those counts, parallel job count, and an individual
+trace name, in that order. The TSV summary and full logs are saved under a new
+`results/` directory. To run only the first trace, for example:
+
+```bash
+./compare_spp_traces.sh 25000000 25000000 2 Trace1-001.gz
+```
+
+The fixed-degree SPP configuration uses the best tested settings:
+`UNI_THRESHOLD=2`, `NON_UNI_PREFETCH_THRESH=2`, confidence-counter maximum `6`,
+and prefetch degree `3`. Prefetch accuracy is tracked for final statistics but
+does not dynamically throttle prefetching.
+
+`spp_v6.cc` is a separate experimental variant that preserves the SPP v5
+prediction, signature, stride, and switcher logic while adding epoch-based
+accuracy throttling. `spp_v7.cc` uses lower accuracy thresholds and a
+conservative degree mapping. Copy the desired version to
+`prefetcher/spp.l1d_pref` before building the `spp` configuration. Each file's
+epoch length, four accuracy-regime upper bounds, and regime prefetch degrees
+are configurable near the top. V6 defaults to 1,000-cycle epochs, bounds of
+20%, 40%, 60%, and 80%, and degrees 1, 2, 3, 4, and 5. V7 uses bounds of 10%,
+20%, 30%, and 40%, and degrees 1, 1, 2, 2, and 3. In both versions, a window
+containing no resolved prefetches retains the current degree.
+
 ## Evaluate the simulation
 
 ChampSim measures IPC (instructions per cycle) as its main performance metric. It also prints other useful metrics at the end of each simulation.

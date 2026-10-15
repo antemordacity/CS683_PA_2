@@ -1,0 +1,8 @@
+trace	varied_factor	epoch_cycles	degree_mapping	degree_bands	status	ipc	l1d_mpki	load_mpki	prefetches_issued	useful_hits	useful_accuracy	log
+Trace1-001.gz	epoch	100	default	1,2,3,4,5	completed	0.233886	16.6388	9.66952	812192	33399	45.9156	epoch-100_default-map.log
+Trace1-001.gz	epoch	500	default	1,2,3,4,5	completed	0.233885	16.6272	9.67936	816184	33103	45.5675	epoch-500_default-map.log
+Trace1-001.gz	epoch	5000	default	1,2,3,4,5	completed	0.23391	16.6087	9.69344	811126	32872	45.8325	epoch-5000_default-map.log
+Trace1-001.gz	epoch	10000	default	1,2,3,4,5	completed	0.233824	16.6332	9.714	819024	32505	45.102	epoch-10000_default-map.log
+Trace1-001.gz	epoch	100000	default	1,2,3,4,5	completed	0.233831	16.6912	9.71616	852500	32638	44.7937	epoch-100000_default-map.log
+Trace1-001.gz	mapping	1000	conservative	1,1,2,2,3	completed	0.234024	16.26	9.76112	604505	29464	49.2569	epoch-1000_conservative-map.log
+Trace1-001.gz	mapping	1000	aggressive	2,3,4,5,5	completed	0.233791	16.9499	9.63896	1001323	35852	43.4143	epoch-1000_aggressive-map.log
